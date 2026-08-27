@@ -1,0 +1,45 @@
+{% extends "zonas/base.html" %}
+
+{% block contenido %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0">Zonas de consumo</h2>
+</div>
+
+<div class="row g-4">
+
+    {% for zona in zonas %}
+
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+
+            <div class="card-body">
+
+                <h3 class="card-title h5">
+                    {{ zona.nombre }}
+                </h3>
+
+                <p class="card-text">
+                    <strong>Límite:</strong>
+                    {{ zona.limite_kwh }} kWh
+                </p>
+
+                <p class="card-text">
+                    <strong>Dispositivos:</strong>
+                    {{ zona.cantidad_dispositivos }}
+                </p>
+            
+                <a href="{% url 'detalle_zona' zona.id %}" class="btn btn-primary">
+                    Ver detalle
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

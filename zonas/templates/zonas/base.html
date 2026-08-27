@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EcoEnergy</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+</head>
+
+<body class="bg-light">
+
+    <header class="bg-dark text-white">
+        <div class="container">
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center py-3">
+
+                <h1 class="h3 mb-0">
+                    EcoEnergy
+                </h1>
+
+                <nav>
+                    <a
+                        href="{% url 'lista_zonas' %}"
+                        class="btn btn-outline-light"
+                    >
+                        Zonas
+                    </a>
+                </nav>
+
+            </div>
+
+        </div>
+    </header>
+
+    <main class="container py-4">
+
+        {% block contenido %}
+        {% endblock %}
+
+    </main>
+
+</body>
+</html>
