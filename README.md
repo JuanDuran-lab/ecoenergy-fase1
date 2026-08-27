@@ -222,3 +222,23 @@ Eva 1 Fase 1/
 
 └── IA.md
 
+
+
+
+
+\## Verificación final de Fase 1
+
+
+
+La aplicación fue verificada mediante `python manage.py check` y pruebas funcionales de las rutas principales.
+
+
+
+Se comprobaron los casos de listado de zonas, detalle de zonas, estado NORMAL, estado ALERTA, zona sin dispositivos, identificador inexistente y actualización dinámica de los datos mediante JSON.
+
+
+
+La versión entregada corresponde al commit definido para la evaluación de la Fase 1.
+
+
+
