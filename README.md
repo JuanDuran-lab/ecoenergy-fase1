@@ -242,3 +242,29 @@ La versión entregada corresponde al commit definido para la evaluación de la F
 
 
 
+\## Fase 2
+
+
+
+Se incorporó la interfaz "Resumen de consumo por zona" en la ruta `/resumen-zonas/`.
+
+
+
+La vista calcula por cada zona:
+
+\- Cantidad de dispositivos.
+
+\- Consumo total.
+
+\- Límite de consumo.
+
+\- Estado según el consumo registrado.
+
+
+
+También se agregaron los totales generales de zonas, dispositivos y consumo total, junto con la navegación desde la interfaz principal.
+
+
+
+
+
