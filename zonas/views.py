@@ -83,3 +83,54 @@ def detalle_zona(request, zona_id):
     )
 
 
+def resumen_zonas(request):
+    zonas = cargar_json("zonas.json")
+    dispositivos = cargar_json("dispositivos.json")
+
+    resumen = []
+
+    for zona in zonas:
+        dispositivos_zona = [
+            dispositivo
+            for dispositivo in dispositivos
+            if dispositivo["zona_id"] == zona["id"]
+        ]
+
+        cantidad_dispositivos = len(dispositivos_zona)
+
+        consumo_total = sum(
+            dispositivo["consumo_kwh"]
+            for dispositivo in dispositivos_zona
+        )
+
+        if consumo_total <= zona["limite_kwh"]:
+            estado = "DENTRO DEL LÍMITE"
+        else:
+            estado = "LÍMITE SUPERADO"
+
+        resumen.append({
+            "id": zona["id"],
+            "nombre": zona["nombre"],
+            "cantidad_dispositivos": cantidad_dispositivos,
+            "consumo_total": consumo_total,
+            "limite_kwh": zona["limite_kwh"],
+            "estado": estado,
+        })
+
+    total_zonas = len(zonas)
+    total_dispositivos = len(dispositivos)
+    consumo_total_general = sum(
+        dispositivo["consumo_kwh"]
+        for dispositivo in dispositivos
+    )
+
+    return render(
+        request,
+        "zonas/resumen.html",
+        {
+            "resumen": resumen,
+            "total_zonas": total_zonas,
+            "total_dispositivos": total_dispositivos,
+            "consumo_total_general": consumo_total_general,
+        }
+    )
