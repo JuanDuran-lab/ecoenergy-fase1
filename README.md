@@ -1,270 +1,256 @@
-EcoEnergy — Fase 1
+EcoEnergy
 
+Aplicación web desarrollada con Django para la gestión y consulta de zonas de consumo energético, dispositivos asociados y control administrativo mediante Django Admin.
 
-
-Aplicación web desarrollada con Django para consultar zonas de consumo energético y los dispositivos instalados en cada zona.
-
-
+El proyecto utiliza Django ORM y una base de datos SQLite, con configuración mediante variables de entorno y datos de demostración reproducibles.
 
 Requisitos
 
-Python 3.12
+Python 3.12 o superior
 
 Django 6.1
 
+python-dotenv
+
+Las dependencias completas se encuentran en:
+
+requirements.txt
+
 Instalación
 
+Clonar el repositorio:
 
+git clone https://github.com/JuanDuran-lab/ecoenergy-fase1.git
+cd ecoenergy-fase1
 
-Clonar el repositorio y entrar a la carpeta del proyecto.
-
-
-
-Crear y activar un entorno virtual:
-
-
+Crear un entorno virtual:
 
 python -m venv .venv
 
-.\\.venv\\Scripts\\Activate.ps1
+Activarlo en PowerShell:
 
-
-
-
+.\.venv\Scripts\Activate.ps1
 
 Instalar las dependencias:
 
-
-
 pip install -r requirements.txt
 
+Variables de entorno
 
+El proyecto utiliza un archivo .env para la configuración local.
+
+Crear el archivo .env a partir del archivo de ejemplo:
+
+Copy-Item .env.example .env
+
+El archivo .env.example contiene las variables necesarias:
+
+DJANGO_SECRET_KEY=coloca-aqui-una-clave-de-desarrollo
+DJANGO_DEBUG=True
+DJANGO_DB_NAME=db.sqlite3
+
+El archivo .env está excluido del repositorio mediante .gitignore.
+
+Base de datos
+
+Aplicar las migraciones:
+
+python manage.py migrate
+
+El proyecto utiliza SQLite por defecto.
+
+La configuración de la base de datos se obtiene mediante variables de entorno definidas en .env.
+
+Datos de demostración
+
+El proyecto incluye un Management Command para cargar datos iniciales de forma reproducible:
+
+python manage.py cargar_datos_demo
+
+Este comando crea o actualiza organizaciones, categorías, tipos de zona, estados de zona, zonas, dispositivos, perfiles de usuario, usuarios de demostración y permisos asociados.
+
+El comando utiliza update_or_create, por lo que puede ejecutarse más de una vez sin duplicar los datos principales.
+
+Usuarios de demostración
+
+Administrador completo
+
+Usuario: admin_demo
+Contraseña: EcoDemo2026!
+
+Tiene permisos completos sobre Django Admin.
+
+Operador EcoEnergy Norte
+
+Usuario: operador_norte
+Contraseña: EcoNorte2026!
+
+Solo puede visualizar y modificar zonas y dispositivos pertenecientes a EcoEnergy Norte.
+
+Operador EcoEnergy Sur
+
+Usuario: operador_sur
+Contraseña: EcoSur2026!
+
+Solo puede visualizar y modificar zonas y dispositivos pertenecientes a EcoEnergy Sur.
+
+Los operadores no poseen permisos de eliminación.
 
 Ejecución
 
+python manage.py check
+python manage.py runserver
 
+Rutas principales
 
-Ejecutar la comprobación de Django:
+http://127.0.0.1:8000/zonas/ — listado de zonas.
 
+http://127.0.0.1:8000/zonas/<id>/ — detalle de zona.
 
+http://127.0.0.1:8000/resumen-zonas/ — resumen de consumo.
+
+http://127.0.0.1:8000/admin/ — Django Admin.
+
+Modelo de datos
+
+Tablas maestras
+
+Organizacion
+
+Categoria
+
+TipoZona
+
+EstadoZona
+
+Tablas operacionales
+
+Zona
+
+Dispositivo
+
+Tabla de apoyo para seguridad
+
+PerfilUsuario
+
+Relaciones principales:
+
+Organizacion 1 ---- N Zona
+TipoZona     1 ---- N Zona
+EstadoZona   1 ---- N Zona
+
+Zona         1 ---- N Dispositivo
+Categoria    1 ---- N Dispositivo
+
+User         1 ---- 1 PerfilUsuario
+Organizacion 1 ---- N PerfilUsuario
+
+Django Admin
+
+El administrador incluye:
+
+list_display
+
+search_fields
+
+list_filter
+
+ordering
+
+list_select_related
+
+Inline de dispositivos dentro de una zona
+
+acciones personalizadas para activar y desactivar dispositivos
+
+validación controlada mediante clean()
+
+filtros dinámicos según usuario
+
+restricción de ForeignKey según organización
+
+Scoping por organización
+
+Los usuarios limitados solo pueden acceder a registros de su propia organización.
+
+operador_norte solo accede a EcoEnergy Norte y operador_sur solo accede a EcoEnergy Sur.
+
+El scoping se aplica mediante get_queryset() en Django Admin. También se restringen ForeignKey y el acceso directo por URL a objetos de otra organización.
+
+Validaciones
+
+La entidad Zona exige:
+
+limite_kwh > 0
+
+Si se intenta guardar un valor igual o inferior a cero, Django Admin muestra un error y no guarda el registro.
+
+Consumo energético
+
+Si:
+
+consumo_total > limite_kwh
+
+el estado calculado es ALERTA. En caso contrario, es NORMAL.
+
+Fuente de datos
+
+La aplicación utiliza Django ORM y SQLite.
+
+Las vistas /zonas/, /zonas/<id>/ y /resumen-zonas/ consultan directamente los modelos mediante Django ORM.
+
+Los archivos JSON de la Fase 1 ya no son la fuente principal de datos.
+
+Puesta en marcha desde un entorno limpio
+
+git clone https://github.com/JuanDuran-lab/ecoenergy-fase1.git
+cd ecoenergy-fase1
+
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+Copy-Item .env.example .env
+
+python manage.py migrate
+python manage.py cargar_datos_demo
+python manage.py check
+python manage.py runserver
+
+Verificación realizada
+
+Se verificó manualmente:
+
+migraciones
+
+carga reproducible de datos demo
+
+acceso al Django Admin
+
+Inline de dispositivos
+
+acciones personalizadas
+
+validación de límite energético
+
+restricciones por organización
+
+acceso con operador Norte y operador Sur
+
+bloqueo de acceso directo a objetos de otra organización
+
+listado público de zonas
+
+detalle de zona
+
+resumen energético
+
+cálculo NORMAL y ALERTA
+
+HTTP 404 para identificadores inexistentes
 
 python manage.py check
 
+Estado actual
 
-
-
-
-Iniciar el servidor:
-
-
-
-python manage.py runserver
-
-
-
-
-
-Luego acceder desde el navegador a:
-
-
-
-http://127.0.0.1:8000/zonas/
-
-
-
-Rutas funcionales
-
-/zonas/ — listado de zonas de consumo.
-
-/zonas/<id>/ — detalle de una zona.
-
-Un ID de zona inexistente responde con HTTP 404.
-
-Datos
-
-
-
-La aplicación utiliza tres archivos JSON como fuente de datos:
-
-
-
-data/zonas.json
-
-data/dispositivos.json
-
-data/categorias.json
-
-
-
-Las relaciones se resuelven mediante identificadores:
-
-
-
-dispositivos.zona\_id → zonas.id
-
-dispositivos.categoria\_id → categorias.id
-
-
-
-No se utilizan Models, migraciones, ORM ni base de datos para los datos del caso.
-
-
-
-Funcionalidades
-
-
-
-La aplicación permite:
-
-
-
-Listar todas las zonas registradas.
-
-Mostrar el límite de consumo de cada zona.
-
-Mostrar la cantidad de dispositivos de cada zona.
-
-Consultar el detalle de una zona.
-
-Mostrar los dispositivos asociados.
-
-Mostrar la categoría de cada dispositivo.
-
-Calcular dinámicamente el consumo total.
-
-Determinar dinámicamente el estado NORMAL o ALERTA.
-
-Mostrar un mensaje cuando una zona no tiene dispositivos.
-
-Responder con 404 cuando la zona solicitada no existe.
-
-Incorporar nuevos registros válidos desde los archivos JSON sin modificar las Views o Templates por cada elemento.
-
-Mantener las tablas adaptables cuando aumenta la cantidad de información.
-
-Pruebas realizadas
-
-
-
-Se verificó el funcionamiento de:
-
-
-
-Listado de zonas.
-
-Detalle de las zonas 1, 2 y 3.
-
-Estado NORMAL.
-
-Estado ALERTA.
-
-Zona sin dispositivos.
-
-Identificador de zona inexistente.
-
-Incorporación dinámica de un nuevo dispositivo mediante dispositivos.json.
-
-Comprobación python manage.py check.
-
-Interfaz
-
-
-
-Los Templates utilizan herencia mediante base.html y Bootstrap para la estructura visual, navegación, tarjetas, botones, alertas y tablas adaptables.
-
-
-
-Estructura principal
-
-Eva 1 Fase 1/
-
-├── data/
-
-│   ├── zonas.json
-
-│   ├── dispositivos.json
-
-│   └── categorias.json
-
-├── ecoenergy/
-
-│   ├── settings.py
-
-│   ├── urls.py
-
-│   └── ...
-
-├── zonas/
-
-│   ├── templates/
-
-│   │   └── zonas/
-
-│   │       ├── base.html
-
-│   │       ├── lista.html
-
-│   │       └── detalle.html
-
-│   ├── views.py
-
-│   └── urls.py
-
-├── manage.py
-
-├── requirements.txt
-
-├── .gitignore
-
-├── README.md
-
-├── ANALISIS.md
-
-└── IA.md
-
-
-
-
-
-\## Verificación final de Fase 1
-
-
-
-La aplicación fue verificada mediante `python manage.py check` y pruebas funcionales de las rutas principales.
-
-
-
-Se comprobaron los casos de listado de zonas, detalle de zonas, estado NORMAL, estado ALERTA, zona sin dispositivos, identificador inexistente y actualización dinámica de los datos mediante JSON.
-
-
-
-La versión entregada corresponde al commit definido para la evaluación de la Fase 1.
-
-
-
-\## Fase 2
-
-
-
-Se incorporó la interfaz "Resumen de consumo por zona" en la ruta `/resumen-zonas/`.
-
-
-
-La vista calcula por cada zona:
-
-\- Cantidad de dispositivos.
-
-\- Consumo total.
-
-\- Límite de consumo.
-
-\- Estado según el consumo registrado.
-
-
-
-También se agregaron los totales generales de zonas, dispositivos y consumo total, junto con la navegación desde la interfaz principal.
-
-
-
-
-
+La aplicación se encuentra preparada para ejecutarse mediante Django ORM, SQLite, variables de entorno y carga reproducible de datos demo.

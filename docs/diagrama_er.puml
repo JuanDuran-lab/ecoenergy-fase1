@@ -1,0 +1,105 @@
+@startuml
+hide methods
+hide stereotypes
+
+skinparam linetype ortho
+skinparam entity {
+    BackgroundColor White
+    BorderColor Black
+}
+
+entity Organizacion {
+    * id : int <<PK>>
+    --
+    nombre : varchar(150)
+    rut : varchar(12) <<UQ>>
+    activa : boolean
+}
+
+entity Categoria {
+    * id : int <<PK>>
+    --
+    nombre : varchar(100) <<UQ>>
+    descripcion : text
+    activa : boolean
+}
+
+entity TipoZona {
+    * id : int <<PK>>
+    --
+    nombre : varchar(100) <<UQ>>
+    descripcion : text
+    activo : boolean
+}
+
+entity EstadoZona {
+    * id : int <<PK>>
+    --
+    nombre : varchar(50) <<UQ>>
+    descripcion : text
+}
+
+entity Zona {
+    * id : int <<PK>>
+    --
+    organizacion_id : int <<FK>>
+    tipo_id : int <<FK>>
+    estado_id : int <<FK>>
+    nombre : varchar(120)
+    descripcion : text
+    limite_kwh : decimal(10,2)
+}
+
+entity Dispositivo {
+    * id : int <<PK>>
+    --
+    zona_id : int <<FK>>
+    categoria_id : int <<FK>>
+    nombre : varchar(120)
+    consumo_kwh : decimal(10,2)
+    activo : boolean
+}
+
+entity User {
+    * id : int <<PK>>
+    --
+    username : varchar
+    password : varchar
+    is_staff : boolean
+    is_superuser : boolean
+}
+
+entity PerfilUsuario {
+    * id : int <<PK>>
+    --
+    usuario_id : int <<FK, UQ>>
+    organizacion_id : int <<FK>>
+}
+
+Organizacion ||--o{ Zona : posee
+TipoZona ||--o{ Zona : clasifica
+EstadoZona ||--o{ Zona : define estado
+
+Zona ||--o{ Dispositivo : contiene
+Categoria ||--o{ Dispositivo : clasifica
+
+User ||--o| PerfilUsuario : posee
+Organizacion ||--o{ PerfilUsuario : agrupa
+
+note right of Zona
+Restricción:
+UNIQUE(organizacion_id, nombre)
+
+Validación:
+limite_kwh > 0
+end note
+
+note right of Dispositivo
+Restricción:
+UNIQUE(zona_id, nombre)
+
+Validación:
+consumo_kwh >= 0
+end note
+
+@enduml
