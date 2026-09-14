@@ -1,74 +1,67 @@
-import json
-from pathlib import Path
+from decimal import Decimal
 
-from django.shortcuts import render
-from django.http import Http404
+from django.db.models import Count
+from django.shortcuts import get_object_or_404, render
 
-
-def cargar_json(nombre_archivo):
-    ruta = Path(__file__).resolve().parent.parent / "data" / nombre_archivo
-
-    with open(ruta, "r", encoding="utf-8") as archivo:
-        return json.load(archivo)
+from .models import Dispositivo, Zona
 
 
 def lista_zonas(request):
-    zonas = cargar_json("zonas.json")
-    dispositivos = cargar_json("dispositivos.json")
-
-    for zona in zonas:
-        zona["cantidad_dispositivos"] = sum(
-            1
-            for dispositivo in dispositivos
-            if dispositivo["zona_id"] == zona["id"]
+    zonas = (
+        Zona.objects
+        .select_related(
+            "organizacion",
+            "tipo",
+            "estado",
         )
+        .annotate(
+            cantidad_dispositivos=Count("dispositivos")
+        )
+        .order_by(
+            "organizacion__nombre",
+            "nombre",
+        )
+    )
 
-    return render(request, "zonas/lista.html", {"zonas": zonas})
+    return render(
+        request,
+        "zonas/lista.html",
+        {
+            "zonas": zonas,
+        },
+    )
 
 
 def detalle_zona(request, zona_id):
-    zonas = cargar_json("zonas.json")
-    dispositivos = cargar_json("dispositivos.json")
-    categorias = cargar_json("categorias.json")
-
-    zona = next(
-        (zona for zona in zonas if zona["id"] == zona_id),
-        None
+    zona = get_object_or_404(
+        Zona.objects.select_related(
+            "organizacion",
+            "tipo",
+            "estado",
+        ),
+        pk=zona_id,
     )
 
-    if zona is None:
-        raise Http404("La zona no existe")
-
-    dispositivos_zona = [
-        dispositivo
-        for dispositivo in dispositivos
-        if dispositivo["zona_id"] == zona_id
-    ]
+    dispositivos_zona = list(
+        zona.dispositivos
+        .select_related("categoria")
+        .order_by("nombre")
+    )
 
     cantidad_dispositivos = len(dispositivos_zona)
 
     consumo_total = sum(
-        dispositivo["consumo_kwh"]
-        for dispositivo in dispositivos_zona
+        (
+            dispositivo.consumo_kwh
+            for dispositivo in dispositivos_zona
+        ),
+        Decimal("0.00"),
     )
-    
-    # Bloque condicional corregido (indentación y comilla)
-    if consumo_total > zona["limite_kwh"]:
+
+    if consumo_total > zona.limite_kwh:
         estado = "ALERTA"
     else:
         estado = "NORMAL"
-
-    for dispositivo in dispositivos_zona:
-        categoria = next(
-            (
-                categoria
-                for categoria in categorias
-                if categoria["id"] == dispositivo["categoria_id"]
-            ),
-            None
-        )
-
-        dispositivo["categoria"] = categoria
 
     return render(
         request,
@@ -79,50 +72,64 @@ def detalle_zona(request, zona_id):
             "cantidad_dispositivos": cantidad_dispositivos,
             "consumo_total": consumo_total,
             "estado": estado,
-        }
+        },
     )
 
 
 def resumen_zonas(request):
-    zonas = cargar_json("zonas.json")
-    dispositivos = cargar_json("dispositivos.json")
+    zonas = (
+        Zona.objects
+        .select_related("organizacion")
+        .prefetch_related("dispositivos")
+        .order_by(
+            "organizacion__nombre",
+            "nombre",
+        )
+    )
 
     resumen = []
 
+    total_dispositivos = 0
+    consumo_total_general = Decimal("0.00")
+
     for zona in zonas:
-        dispositivos_zona = [
-            dispositivo
-            for dispositivo in dispositivos
-            if dispositivo["zona_id"] == zona["id"]
-        ]
-
-        cantidad_dispositivos = len(dispositivos_zona)
-
-        consumo_total = sum(
-            dispositivo["consumo_kwh"]
-            for dispositivo in dispositivos_zona
+        dispositivos_zona = list(
+            zona.dispositivos.all()
         )
 
-        if consumo_total <= zona["limite_kwh"]:
+        cantidad_dispositivos = len(
+            dispositivos_zona
+        )
+
+        consumo_total = sum(
+            (
+                dispositivo.consumo_kwh
+                for dispositivo in dispositivos_zona
+            ),
+            Decimal("0.00"),
+        )
+
+        if consumo_total <= zona.limite_kwh:
             estado = "DENTRO DEL LÍMITE"
         else:
             estado = "LÍMITE SUPERADO"
 
-        resumen.append({
-            "id": zona["id"],
-            "nombre": zona["nombre"],
-            "cantidad_dispositivos": cantidad_dispositivos,
-            "consumo_total": consumo_total,
-            "limite_kwh": zona["limite_kwh"],
-            "estado": estado,
-        })
+        resumen.append(
+            {
+                "id": zona.id,
+                "nombre": zona.nombre,
+                "organizacion": zona.organizacion.nombre,
+                "cantidad_dispositivos": cantidad_dispositivos,
+                "consumo_total": consumo_total,
+                "limite_kwh": zona.limite_kwh,
+                "estado": estado,
+            }
+        )
 
-    total_zonas = len(zonas)
-    total_dispositivos = len(dispositivos)
-    consumo_total_general = sum(
-        dispositivo["consumo_kwh"]
-        for dispositivo in dispositivos
-    )
+        total_dispositivos += cantidad_dispositivos
+        consumo_total_general += consumo_total
+
+    total_zonas = len(resumen)
 
     return render(
         request,
@@ -132,5 +139,5 @@ def resumen_zonas(request):
             "total_zonas": total_zonas,
             "total_dispositivos": total_dispositivos,
             "consumo_total_general": consumo_total_general,
-        }
+        },
     )
