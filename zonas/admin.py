@@ -361,3 +361,8 @@ class PerfilUsuarioAdmin(admin.ModelAdmin):
         "usuario",
         "organizacion",
     )
+
+
+admin.site.site_header = "EcoEnergy - Administración"
+admin.site.site_title = "EcoEnergy Admin"
+admin.site.index_title = "Panel de administración EcoEnergy"
