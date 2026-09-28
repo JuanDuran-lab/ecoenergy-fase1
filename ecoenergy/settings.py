@@ -95,18 +95,18 @@ if DB_ENGINE == "postgresql":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("DB_NAME", "ecoenergy"),
+            "NAME": os.getenv("DB_NAME") or "ecoenergy",
             "USER": os.getenv("DB_USER", "ecoenergy"),
             "PASSWORD": os.getenv("DB_PASSWORD", ""),
-            "HOST": os.getenv("DB_HOST", "localhost"),
-            "PORT": os.getenv("DB_PORT", "5432"),
+            "HOST": os.getenv("DB_HOST") or "localhost",
+            "PORT": os.getenv("DB_PORT") or "5432",
         }
     }
 else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / os.getenv("DB_NAME", "db.sqlite3"),
+            "NAME": BASE_DIR / (os.getenv("DB_NAME") or "db.sqlite3"),
         }
     }
 
@@ -160,7 +160,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT", BASE_DIR / "media"))
+MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT") or BASE_DIR / "media")
 
 
 # ---------------------------------------------------------------------------
@@ -176,7 +176,7 @@ if os.getenv("EMAIL_HOST"):
             "BACKEND": "django.core.mail.backends.smtp.EmailBackend",
             "OPTIONS": {
                 "host": os.getenv("EMAIL_HOST"),
-                "port": int(os.getenv("EMAIL_PORT", "587")),
+                "port": int(os.getenv("EMAIL_PORT") or 587),
                 "username": os.getenv("EMAIL_HOST_USER", ""),
                 "password": os.getenv("EMAIL_HOST_PASSWORD", ""),
                 "use_tls": env_bool("EMAIL_USE_TLS", True),
@@ -190,6 +190,37 @@ else:
             "BACKEND": "django.core.mail.backends.console.EmailBackend",
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Producción (DJANGO_DEBUG=False)
+# ---------------------------------------------------------------------------
+
+# Tamaño máximo de una petición con archivos (la imagen admite 2 MB).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 horas
+X_FRAME_OPTIONS = "DENY"
+SECURE_CONTENT_TYPE_NOSNIFF = True
+
+# Solo activar si el sitio se sirve con HTTPS (certificado en Nginx).
+USE_HTTPS = env_bool("DJANGO_USE_HTTPS", False)
+SESSION_COOKIE_SECURE = USE_HTTPS
+CSRF_COOKIE_SECURE = USE_HTTPS
+if USE_HTTPS:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+if not DEBUG and SECRET_KEY.startswith("django-insecure"):
+    raise RuntimeError("Define DJANGO_SECRET_KEY en el .env antes de ejecutar en producción.")
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO" if not DEBUG else "WARNING"},
+}
 
 
 # ---------------------------------------------------------------------------
