@@ -21,6 +21,7 @@ urlpatterns = [
     path("dispositivos/<int:pk>/eliminar/", devices.DeviceDeleteView.as_view(), name="device_delete"),
     # Lecturas de consumo
     path("lecturas/", readings.ReadingListView.as_view(), name="reading_list"),
+    path("lecturas/exportar/", readings.ReadingExportView.as_view(), name="reading_export"),
     path("lecturas/nueva/", readings.ReadingCreateView.as_view(), name="reading_create"),
     path("lecturas/<int:pk>/", readings.ReadingDetailView.as_view(), name="reading_detail"),
     path("lecturas/<int:pk>/editar/", readings.ReadingUpdateView.as_view(), name="reading_update"),
