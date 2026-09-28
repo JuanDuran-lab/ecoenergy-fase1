@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+
+{% block title %}No encontrado{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <i class="bi bi-search display-3 text-secondary"></i>
+    <h1 class="h3 mt-3">El registro no existe o no está disponible</h1>
+    <p class="text-secondary">Puede haber sido eliminado o pertenecer a otra organización.</p>
+    <a href="{% url 'monitoring:dashboard' %}" class="btn btn-outline-success">Volver al inicio</a>
+</div>
+{% endblock %}

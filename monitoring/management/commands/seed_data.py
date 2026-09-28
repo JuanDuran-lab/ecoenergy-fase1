@@ -39,6 +39,7 @@ from monitoring.models import (
     ZoneStatus,
     ZoneType,
 )
+from monitoring.queries import annotate_zone_metrics
 
 RANDOM_SEED = 2026
 ZONES_PER_ORGANIZATION = 8
@@ -164,6 +165,7 @@ class Command(BaseCommand):
             devices = self.create_devices(zones, masters)
             readings = self.create_readings(devices)
             alerts = self.create_alerts(readings, masters)
+            self.calibrate_zone_limits()
             groups = self.create_groups()
             self.create_users(users_config, organizations, groups)
 
@@ -404,6 +406,20 @@ class Command(BaseCommand):
                 )
             )
         return Alert.objects.bulk_create(alerts, batch_size=500)
+
+    def calibrate_zone_limits(self):
+        """
+        Ajusta el límite de cada zona en torno a su consumo real de los
+        últimos 30 días, para que el demo tenga zonas dentro y fuera del
+        límite (entre 75% y 140% del consumo observado).
+        """
+        zones = annotate_zone_metrics(Zone.objects.all())
+        for zone in zones:
+            factor = Decimal(str(self.random.uniform(0.75, 1.4)))
+            zone.consumption_limit_kwh = max(
+                money(zone.consumption_kwh * factor), Decimal("10.00")
+            )
+        Zone.objects.bulk_update(zones, ["consumption_limit_kwh"])
 
     # ------------------------------------------------------------------
     # Roles y usuarios

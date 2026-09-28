@@ -7,6 +7,7 @@ Ver .env.example para la lista completa.
 """
 
 import os
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -137,7 +138,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LOGIN_URL = "accounts:login"
-LOGIN_REDIRECT_URL = "home"
+LOGIN_REDIRECT_URL = "monitoring:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
 
@@ -189,3 +190,11 @@ else:
             "BACKEND": "django.core.mail.backends.console.EmailBackend",
         },
     }
+
+
+# ---------------------------------------------------------------------------
+# Pruebas automatizadas: hasher rápido SOLO al ejecutar "manage.py test".
+# ---------------------------------------------------------------------------
+
+if len(sys.argv) > 1 and sys.argv[1] == "test":
+    PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
