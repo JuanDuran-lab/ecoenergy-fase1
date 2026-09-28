@@ -1,45 +1,49 @@
 {% extends "core/base.html" %}
 
-{% block content %}
-<h2 class="mb-4">Resumen de consumo por zona</h2>
+{% block title %}Resumen de consumo{% endblock %}
 
-<div class="row g-4 mb-4">
-    <div class="col-12 col-md-4"><div class="card shadow-sm"><div class="card-body">
-        <h3 class="h5">Total de zonas</h3><p class="display-6 mb-0">{{ total_zones }}</p>
+{% block content %}
+<h1 class="h3 mb-4">Resumen de consumo por zona <small class="text-secondary fs-6">(últimos {{ window_days }} días)</small></h1>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
+        <div class="text-secondary small">Zonas</div><div class="stat-value">{{ total_zones }}</div>
     </div></div></div>
-    <div class="col-12 col-md-4"><div class="card shadow-sm"><div class="card-body">
-        <h3 class="h5">Total de dispositivos</h3><p class="display-6 mb-0">{{ total_devices }}</p>
+    <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
+        <div class="text-secondary small">Dispositivos</div><div class="stat-value">{{ total_devices }}</div>
     </div></div></div>
-    <div class="col-12 col-md-4"><div class="card shadow-sm"><div class="card-body">
-        <h3 class="h5">Consumo total</h3><p class="display-6 mb-0">{{ total_consumption }} kWh</p>
+    <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
+        <div class="text-secondary small">Consumo total</div><div class="stat-value">{{ total_consumption }} <small class="fs-6">kWh</small></div>
+    </div></div></div>
+    <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
+        <div class="text-secondary small">Zonas sobre el límite</div><div class="stat-value text-danger">{{ zones_over_limit }}</div>
     </div></div></div>
 </div>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead>
-            <tr><th>Zona</th><th>Organización</th><th>Dispositivos</th><th>Consumo total</th><th>Límite</th><th>Estado</th></tr>
-        </thead>
-        <tbody>
-            {% for row in summary %}
-            <tr>
-                <td><a href="{% url 'monitoring:zone_detail' row.zone.pk %}">{{ row.zone.name }}</a></td>
-                <td>{{ row.zone.organization.name }}</td>
-                <td>{{ row.device_count }}</td>
-                <td>{{ row.total_consumption }} kWh</td>
-                <td>{{ row.zone.consumption_limit_kwh }} kWh</td>
-                <td>
-                    {% if row.over_limit %}
-                    <span class="text-danger fw-bold">LÍMITE SUPERADO</span>
-                    {% else %}
-                    <span class="text-success fw-bold">DENTRO DEL LÍMITE</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6">No existen zonas disponibles.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr><th>Zona</th><th>Organización</th><th class="text-end">Dispositivos</th><th class="text-end">Consumo</th><th class="text-end">Límite</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+                {% for zone in zones %}
+                <tr>
+                    <td><a href="{% url 'monitoring:zone_detail' zone.pk %}">{{ zone.name }}</a></td>
+                    <td>{{ zone.organization.name }}</td>
+                    <td class="text-end">{{ zone.device_count }}</td>
+                    <td class="text-end">{{ zone.consumption_kwh }} kWh</td>
+                    <td class="text-end">{{ zone.consumption_limit_kwh }} kWh</td>
+                    <td>
+                        {% if zone.over_limit %}<span class="text-danger fw-bold">LÍMITE SUPERADO</span>
+                        {% else %}<span class="text-success fw-bold">DENTRO DEL LÍMITE</span>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-secondary py-4">No existen zonas disponibles.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

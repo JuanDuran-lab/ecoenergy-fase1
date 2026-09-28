@@ -307,3 +307,70 @@ class SeedCommandTests(TestCase):
         with mock.patch.dict("os.environ", env):
             with self.assertRaises(CommandError):
                 call_command("seed_data", stdout=StringIO())
+
+
+class ViewPermissionAndScopingTests(EcoEnergyBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.no_perms = User.objects.create_user("sin_permisos", password=TEST_PASSWORD)
+        UserProfile.objects.create(user=self.no_perms, organization=self.org_north)
+        self.admin = User.objects.create_superuser("admin", "admin@test.cl", TEST_PASSWORD)
+
+    def login(self, username):
+        self.client.login(username=username, password=TEST_PASSWORD)
+
+    def test_anonymous_is_redirected_to_login(self):
+        response = self.client.get(reverse("monitoring:zone_list"))
+        self.assertEqual(response.status_code, 302)
+
+    def test_user_without_permission_gets_403(self):
+        self.login("sin_permisos")
+        response = self.client.get(reverse("monitoring:zone_list"))
+        self.assertEqual(response.status_code, 403)
+
+    def test_zone_list_is_scoped_to_organization(self):
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:zone_list"))
+        self.assertContains(response, "Recepción Norte")
+        self.assertNotContains(response, "Recepción Sur")
+
+    def test_other_organization_zone_returns_404(self):
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:zone_detail", args=[self.zone_south.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_superuser_sees_all_organizations(self):
+        self.login("admin")
+        response = self.client.get(reverse("monitoring:zone_list"))
+        self.assertContains(response, "Recepción Norte")
+        self.assertContains(response, "Recepción Sur")
+
+    def test_summary_is_scoped(self):
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:zone_summary"))
+        self.assertContains(response, "Recepción Norte")
+        self.assertNotContains(response, "Recepción Sur")
+
+    def test_soft_deleted_zone_not_listed(self):
+        self.zone_north.soft_delete()
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:zone_list"))
+        self.assertNotContains(response, "Recepción Norte")
+
+    def test_zone_metrics_ignore_soft_deleted_readings(self):
+        reading = ConsumptionReading.objects.create(
+            device=self.device_north,
+            reading_at=timezone.now() - timedelta(days=1),
+            consumption_kwh=Decimal("500.00"),
+        )
+        reading.soft_delete()
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:zone_detail", args=[self.zone_north.pk]))
+        self.assertEqual(response.context["zone"].consumption_kwh, Decimal("0.00"))
+
+    def test_dashboard_counts_are_scoped(self):
+        self.login("operador_norte")
+        response = self.client.get(reverse("monitoring:dashboard"))
+        stats = {stat["label"]: stat["value"] for stat in response.context["stats"]}
+        self.assertEqual(stats["Zonas"], 1)
+        self.assertEqual(stats["Dispositivos"], 1)

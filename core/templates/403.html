@@ -1,0 +1,12 @@
+{% extends "core/base.html" %}
+
+{% block title %}Acceso denegado{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <i class="bi bi-shield-lock display-3 text-danger"></i>
+    <h1 class="h3 mt-3">No tienes permiso para realizar esta acción</h1>
+    <p class="text-secondary">Tu rol no incluye este permiso. Si crees que es un error, contacta al administrador.</p>
+    <a href="{% url 'monitoring:dashboard' %}" class="btn btn-outline-success">Volver al inicio</a>
+</div>
+{% endblock %}

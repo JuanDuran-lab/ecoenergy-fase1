@@ -1,0 +1,75 @@
+{% extends "core/base.html" %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Hola, {{ user.first_name|default:user.username }}</h1>
+        <p class="text-secondary mb-0">
+            {% if user.profile.organization %}Organización: <strong>{{ user.profile.organization.name }}</strong>
+            {% else %}Vista global: todas las organizaciones{% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    {% for stat in stats %}
+    <div class="col-6 col-lg-3">
+        <div class="card shadow-sm stat-card h-100">
+            <div class="card-body">
+                <div class="text-secondary small"><i class="bi {{ stat.icon }}"></i> {{ stat.label }}</div>
+                <div class="stat-value">{{ stat.value }}</div>
+                {% if stat.url %}<a href="{% url stat.url %}" class="stretched-link"></a>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12"><div class="alert alert-warning">Tu usuario no tiene permisos de consulta asignados.</div></div>
+    {% endfor %}
+</div>
+
+<div class="row g-4">
+    {% if open_alerts is not None %}
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Alertas pendientes más graves</div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Severidad</th><th>Alerta</th><th>Zona</th><th>Detectada</th></tr></thead>
+                    <tbody>
+                    {% for alert in open_alerts %}
+                        <tr>
+                            <td><span class="badge" style="background:{{ alert.severity.color }}">{{ alert.severity.name }}</span></td>
+                            <td>{{ alert.title }}</td>
+                            <td>{{ alert.zone.name }}</td>
+                            <td class="small text-secondary">{{ alert.detected_at|date:"d-m-Y H:i" }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="4" class="text-center text-secondary py-3">Sin alertas pendientes.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% if zones_over_limit is not None %}
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-white fw-semibold">Zonas sobre su límite (últimos {{ window_days }} días)</div>
+            <ul class="list-group list-group-flush">
+                {% for zone in zones_over_limit %}
+                <li class="list-group-item d-flex justify-content-between">
+                    <a href="{% url 'monitoring:zone_detail' zone.pk %}">{{ zone.name }} <span class="text-secondary small">· {{ zone.organization.name }}</span></a>
+                    <span class="text-danger small fw-semibold">{{ zone.consumption_kwh }} / {{ zone.consumption_limit_kwh }} kWh</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-secondary">Todas las zonas están dentro de su límite.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

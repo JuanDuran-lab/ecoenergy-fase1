@@ -1,21 +1,45 @@
 {% extends "core/base.html" %}
 
+{% block title %}Zonas{% endblock %}
+
 {% block content %}
-<h2 class="mb-4">Zonas de consumo</h2>
-<div class="row g-4">
-    {% for zone in zones %}
-    <div class="col-12 col-md-6 col-lg-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
-                <h3 class="card-title h5">{{ zone.name }}</h3>
-                <p class="card-text"><strong>Límite:</strong> {{ zone.consumption_limit_kwh }} kWh</p>
-                <p class="card-text"><strong>Dispositivos:</strong> {{ zone.device_count }}</p>
-                <a href="{% url 'monitoring:zone_detail' zone.pk %}" class="btn btn-primary">Ver detalle</a>
-            </div>
-        </div>
-    </div>
-    {% empty %}
-    <p class="text-secondary">No existen zonas disponibles.</p>
-    {% endfor %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <h1 class="h3 mb-0">Zonas</h1>
 </div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Zona</th>
+                    {% if user.is_superuser %}<th>Organización</th>{% endif %}
+                    <th>Tipo</th>
+                    <th>Estado</th>
+                    <th class="text-end">Dispositivos</th>
+                    <th class="text-end">Consumo 30 días</th>
+                    <th class="text-end">Límite</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for zone in zones %}
+                <tr>
+                    <td><a href="{% url 'monitoring:zone_detail' zone.pk %}">{{ zone.name }}</a></td>
+                    {% if user.is_superuser %}<td>{{ zone.organization.name }}</td>{% endif %}
+                    <td>{{ zone.zone_type.name }}</td>
+                    <td>{{ zone.status.name }}</td>
+                    <td class="text-end">{{ zone.device_count }}</td>
+                    <td class="text-end {% if zone.consumption_kwh > zone.consumption_limit_kwh %}text-danger fw-semibold{% endif %}">{{ zone.consumption_kwh }} kWh</td>
+                    <td class="text-end">{{ zone.consumption_limit_kwh }} kWh</td>
+                    <td class="text-end text-nowrap"><a href="{% url 'monitoring:zone_detail' zone.pk %}" class="btn btn-sm btn-outline-secondary" title="Ver"><i class="bi bi-eye"></i></a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-secondary py-4">No hay zonas registradas.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% include "core/partials/pagination.html" %}
 {% endblock %}

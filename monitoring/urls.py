@@ -1,11 +1,13 @@
 from django.urls import path
 
-from . import views
+from .views import dashboard, zones
 
 app_name = "monitoring"
 
 urlpatterns = [
-    path("zonas/", views.zone_list, name="zone_list"),
-    path("zonas/<int:pk>/", views.zone_detail, name="zone_detail"),
-    path("resumen-zonas/", views.zone_summary, name="zone_summary"),
+    path("", dashboard.DashboardView.as_view(), name="dashboard"),
+    # Zonas
+    path("zonas/", zones.ZoneListView.as_view(), name="zone_list"),
+    path("zonas/<int:pk>/", zones.ZoneDetailView.as_view(), name="zone_detail"),
+    path("resumen-zonas/", zones.ZoneSummaryView.as_view(), name="zone_summary"),
 ]
