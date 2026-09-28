@@ -1,0 +1,23 @@
+# /etc/systemd/system/ecoenergy.service
+# Servicio systemd que mantiene Gunicorn corriendo y lo reinicia al
+# reiniciar la instancia EC2.
+[Unit]
+Description=EcoEnergy (Gunicorn)
+After=network.target
+
+[Service]
+User=ubuntu
+Group=www-data
+WorkingDirectory=/home/ubuntu/ecoenergy
+EnvironmentFile=/home/ubuntu/ecoenergy/.env
+ExecStart=/home/ubuntu/ecoenergy/.venv/bin/gunicorn \
+    --workers 3 \
+    --bind unix:/run/ecoenergy/gunicorn.sock \
+    --access-logfile - \
+    ecoenergy.wsgi:application
+RuntimeDirectory=ecoenergy
+RuntimeDirectoryMode=0755
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
