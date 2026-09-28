@@ -1,0 +1,105 @@
+erDiagram
+    ORGANIZATION ||--o{ ZONE : "has"
+    ORGANIZATION ||--o{ USER_PROFILE : "scopes"
+    AUTH_USER ||--|| USER_PROFILE : "has"
+    AUTH_USER ||--o{ PASSWORD_RESET_CODE : "requests"
+    ZONE_TYPE ||--o{ ZONE : "classifies"
+    ZONE_STATUS ||--o{ ZONE : "describes"
+    ZONE ||--o{ DEVICE : "contains"
+    CATEGORY ||--o{ DEVICE : "classifies"
+    MANUFACTURER ||--o{ DEVICE : "makes"
+    DEVICE ||--o{ CONSUMPTION_READING : "records"
+    ZONE ||--o{ ALERT : "raises"
+    DEVICE |o--o{ ALERT : "involves"
+    CONSUMPTION_READING |o--o{ ALERT : "triggers"
+    ALERT_SEVERITY ||--o{ ALERT : "grades"
+
+    ORGANIZATION {
+        bigint id PK
+        varchar name
+        varchar tax_id UK
+        bool is_active
+        datetime deleted_at
+    }
+    CATEGORY {
+        bigint id PK
+        varchar name UK
+        text description
+        bool is_active
+        datetime deleted_at
+    }
+    ZONE_TYPE {
+        bigint id PK
+        varchar name UK
+        text description
+        bool is_active
+        datetime deleted_at
+    }
+    ZONE_STATUS {
+        bigint id PK
+        varchar name UK
+        text description
+        datetime deleted_at
+    }
+    MANUFACTURER {
+        bigint id PK
+        varchar name UK
+        varchar country
+        varchar website
+        bool is_active
+        datetime deleted_at
+    }
+    ALERT_SEVERITY {
+        bigint id PK
+        varchar name UK
+        smallint level UK
+        varchar color
+        datetime deleted_at
+    }
+    ZONE {
+        bigint id PK
+        bigint organization_id FK
+        bigint zone_type_id FK
+        bigint status_id FK
+        varchar name
+        decimal consumption_limit_kwh
+        datetime deleted_at
+    }
+    DEVICE {
+        bigint id PK
+        bigint zone_id FK
+        bigint category_id FK
+        bigint manufacturer_id FK
+        varchar name
+        varchar serial_number UK
+        decimal nominal_consumption_kwh
+        date installed_on
+        bool is_active
+        varchar image
+        datetime deleted_at
+    }
+    CONSUMPTION_READING {
+        bigint id PK
+        bigint device_id FK
+        datetime reading_at
+        decimal consumption_kwh
+        varchar notes
+        datetime deleted_at
+    }
+    ALERT {
+        bigint id PK
+        bigint zone_id FK
+        bigint device_id FK
+        bigint reading_id FK
+        bigint severity_id FK
+        varchar title
+        varchar status
+        datetime detected_at
+        datetime resolved_at
+        datetime deleted_at
+    }
+    USER_PROFILE {
+        bigint id PK
+        int user_id FK
+        bigint organization_id FK
+    }

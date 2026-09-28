@@ -1,4 +1,5 @@
 import os
+from datetime import date
 from decimal import Decimal
 
 from django.contrib.auth.models import Permission, User
@@ -8,6 +9,7 @@ from accounts.models import UserProfile
 from monitoring.models import (
     Category,
     Device,
+    Manufacturer,
     Organization,
     Zone,
     ZoneStatus,
@@ -46,6 +48,8 @@ class Command(BaseCommand):
         lighting, _ = Category.objects.update_or_create(name="Iluminación")
         computing, _ = Category.objects.update_or_create(name="Computación")
 
+        generic, _ = Manufacturer.objects.update_or_create(name="Genérico")
+
         office, _ = ZoneType.objects.update_or_create(name="Oficina")
         warehouse, _ = ZoneType.objects.update_or_create(name="Bodega")
         tech_room, _ = ZoneType.objects.update_or_create(name="Sala técnica")
@@ -71,7 +75,7 @@ class Command(BaseCommand):
                 },
             )
 
-        for org, zone_name, category, name, consumption, active in [
+        for index, (org, zone_name, category, name, consumption, active) in enumerate([
             (north, "Recepción", hvac, "Aire acondicionado recepción", "45.00", True),
             (north, "Recepción", lighting, "Iluminación recepción", "25.00", True),
             (north, "Oficina administrativa", computing, "Estaciones de trabajo", "50.00", True),
@@ -79,11 +83,14 @@ class Command(BaseCommand):
             (north, "Sala de servidores", hvac, "Climatización servidores", "55.00", True),
             (south, "Recepción", lighting, "Iluminación recepción sur", "30.00", True),
             (south, "Bodega principal", lighting, "Iluminación bodega", "20.00", False),
-        ]:
+        ], start=1):
             Device.objects.update_or_create(
                 zone=zones[(org.pk, zone_name)],
                 name=name,
                 defaults={
+                    "serial_number": f"SN-{index:06d}",
+                    "manufacturer": generic,
+                    "installed_on": date(2025, 1, 1),
                     "category": category,
                     "nominal_consumption_kwh": Decimal(consumption),
                     "is_active": active,

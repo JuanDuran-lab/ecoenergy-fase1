@@ -1,3 +1,4 @@
+from datetime import date, timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import Permission, User
@@ -7,7 +8,20 @@ from django.urls import reverse
 
 from accounts.models import UserProfile
 
-from .models import Category, Device, Organization, Zone, ZoneStatus, ZoneType
+from django.utils import timezone
+
+from .models import (
+    Alert,
+    AlertSeverity,
+    Category,
+    ConsumptionReading,
+    Device,
+    Manufacturer,
+    Organization,
+    Zone,
+    ZoneStatus,
+    ZoneType,
+)
 
 TEST_PASSWORD = "Prueba#Segura2026"
 
@@ -19,6 +33,8 @@ class EcoEnergyBaseTest(TestCase):
         self.category = Category.objects.create(name="Climatización")
         self.zone_type = ZoneType.objects.create(name="Oficina")
         self.zone_status = ZoneStatus.objects.create(name="Operativa")
+        self.manufacturer = Manufacturer.objects.create(name="Genérico")
+        self.severity = AlertSeverity.objects.create(name="Alta", level=3)
 
         self.zone_north = Zone.objects.create(
             organization=self.org_north,
@@ -37,13 +53,19 @@ class EcoEnergyBaseTest(TestCase):
         self.device_north = Device.objects.create(
             zone=self.zone_north,
             category=self.category,
+            manufacturer=self.manufacturer,
             name="Aire acondicionado Norte",
+            serial_number="SN-0001",
+            installed_on=date(2025, 1, 1),
             nominal_consumption_kwh=Decimal("45.00"),
         )
         self.device_south = Device.objects.create(
             zone=self.zone_south,
             category=self.category,
+            manufacturer=self.manufacturer,
             name="Aire acondicionado Sur",
+            serial_number="SN-0002",
+            installed_on=date(2025, 1, 1),
             nominal_consumption_kwh=Decimal("30.00"),
         )
 
@@ -82,7 +104,10 @@ class ModelValidationTests(EcoEnergyBaseTest):
         device = Device(
             zone=self.zone_north,
             category=self.category,
+            manufacturer=self.manufacturer,
             name="Dispositivo inválido",
+            serial_number="SN-0003",
+            installed_on=date(2025, 1, 1),
             nominal_consumption_kwh=Decimal("-1.00"),
         )
         with self.assertRaises(ValidationError):
@@ -98,6 +123,54 @@ class ModelValidationTests(EcoEnergyBaseTest):
         )
         with self.assertRaises(ValidationError):
             zone.full_clean()
+
+
+    def test_device_rejects_future_installation_date(self):
+        self.device_north.installed_on = timezone.localdate() + timedelta(days=1)
+        with self.assertRaises(ValidationError):
+            self.device_north.full_clean()
+
+    def test_reading_rejects_future_date(self):
+        reading = ConsumptionReading(
+            device=self.device_north,
+            reading_at=timezone.now() + timedelta(hours=1),
+            consumption_kwh=Decimal("10.00"),
+        )
+        with self.assertRaises(ValidationError):
+            reading.full_clean()
+
+    def test_reading_rejects_inactive_device(self):
+        self.device_north.is_active = False
+        self.device_north.save()
+        reading = ConsumptionReading(
+            device=self.device_north,
+            reading_at=timezone.now(),
+            consumption_kwh=Decimal("10.00"),
+        )
+        with self.assertRaises(ValidationError):
+            reading.full_clean()
+
+    def test_alert_device_must_belong_to_zone(self):
+        alert = Alert(
+            zone=self.zone_north,
+            device=self.device_south,
+            severity=self.severity,
+            title="Consumo alto",
+            detected_at=timezone.now(),
+        )
+        with self.assertRaises(ValidationError):
+            alert.full_clean()
+
+    def test_resolved_alert_requires_resolution_date(self):
+        alert = Alert(
+            zone=self.zone_north,
+            severity=self.severity,
+            title="Consumo alto",
+            status=Alert.Status.RESOLVED,
+            detected_at=timezone.now(),
+        )
+        with self.assertRaises(ValidationError):
+            alert.full_clean()
 
 
 class SoftDeleteTests(EcoEnergyBaseTest):
@@ -116,9 +189,22 @@ class SoftDeleteTests(EcoEnergyBaseTest):
         self.assertEqual(Device.all_objects.filter(zone=self.zone_north).count(), 1)
         self.assertEqual(Device.objects.filter(zone=self.zone_north).count(), 0)
 
-    def test_zone_soft_delete_cascades_to_devices(self):
+    def test_zone_soft_delete_cascades_to_devices_readings_and_alerts(self):
+        reading = ConsumptionReading.objects.create(
+            device=self.device_north,
+            reading_at=timezone.now(),
+            consumption_kwh=Decimal("10.00"),
+        )
+        alert = Alert.objects.create(
+            zone=self.zone_north,
+            severity=self.severity,
+            title="Consumo alto",
+            detected_at=timezone.now(),
+        )
         self.zone_north.soft_delete()
         self.assertFalse(Device.objects.filter(pk=self.device_north.pk).exists())
+        self.assertFalse(ConsumptionReading.objects.filter(pk=reading.pk).exists())
+        self.assertFalse(Alert.objects.filter(pk=alert.pk).exists())
 
     def test_deleted_name_can_be_reused(self):
         self.zone_north.soft_delete()

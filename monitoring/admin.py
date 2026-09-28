@@ -1,10 +1,15 @@
 from django.contrib import admin
+from django.utils.html import format_html
 
 from core.admin import OrganizationScopedAdminMixin, SoftDeleteAdmin
 
 from .models import (
+    Alert,
+    AlertSeverity,
     Category,
+    ConsumptionReading,
     Device,
+    Manufacturer,
     Organization,
     Zone,
     ZoneStatus,
@@ -52,6 +57,29 @@ class ZoneStatusAdmin(SoftDeleteAdmin):
     ordering = ("name",)
 
 
+@admin.register(Manufacturer)
+class ManufacturerAdmin(SoftDeleteAdmin):
+    list_display = ("name", "country", "website", "is_active")
+    search_fields = ("name", "country")
+    list_filter = ("is_active", "country")
+    ordering = ("name",)
+
+
+@admin.register(AlertSeverity)
+class AlertSeverityAdmin(SoftDeleteAdmin):
+    list_display = ("name", "level", "color_badge")
+    search_fields = ("name",)
+    ordering = ("level",)
+
+    @admin.display(description="color")
+    def color_badge(self, obj):
+        return format_html(
+            '<span style="background:{};color:#fff;padding:2px 8px;border-radius:4px">{}</span>',
+            obj.color,
+            obj.color,
+        )
+
+
 # ---------------------------------------------------------------------------
 # Tablas operacionales (con scoping por organización)
 # ---------------------------------------------------------------------------
@@ -60,7 +88,15 @@ class ZoneStatusAdmin(SoftDeleteAdmin):
 class DeviceInline(admin.TabularInline):
     model = Device
     extra = 0
-    fields = ("name", "category", "nominal_consumption_kwh", "is_active")
+    fields = (
+        "name",
+        "serial_number",
+        "category",
+        "manufacturer",
+        "nominal_consumption_kwh",
+        "installed_on",
+        "is_active",
+    )
     show_change_link = True
 
 
@@ -96,14 +132,44 @@ def deactivate_devices(modeladmin, request, queryset):
 class DeviceAdmin(OrganizationScopedAdminMixin, SoftDeleteAdmin):
     list_display = (
         "name",
+        "serial_number",
         "zone",
         "category",
+        "manufacturer",
         "nominal_consumption_kwh",
         "is_active",
     )
-    search_fields = ("name", "zone__name", "category__name")
-    list_filter = ("is_active", "category", "zone__organization")
+    search_fields = ("name", "serial_number", "zone__name", "category__name")
+    list_filter = ("is_active", "category", "manufacturer", "zone__organization")
     ordering = ("zone__name", "name")
-    list_select_related = ("zone", "zone__organization", "category")
+    list_select_related = ("zone", "zone__organization", "category", "manufacturer")
     actions = SoftDeleteAdmin.actions + (activate_devices, deactivate_devices)
+    scoped_fk_fields = {"zone": Zone}
+
+
+@admin.register(ConsumptionReading)
+class ConsumptionReadingAdmin(OrganizationScopedAdminMixin, SoftDeleteAdmin):
+    list_display = ("device", "zone_name", "reading_at", "consumption_kwh")
+    search_fields = ("device__name", "device__serial_number", "device__zone__name")
+    list_filter = ("device__zone__organization", "device__category")
+    date_hierarchy = "reading_at"
+    ordering = ("-reading_at",)
+    list_select_related = ("device", "device__zone")
+    autocomplete_fields = ("device",)
+    list_per_page = 30
+
+    @admin.display(description="zona", ordering="device__zone__name")
+    def zone_name(self, obj):
+        return obj.device.zone.name
+
+
+@admin.register(Alert)
+class AlertAdmin(OrganizationScopedAdminMixin, SoftDeleteAdmin):
+    list_display = ("title", "zone", "device", "severity", "status", "detected_at")
+    search_fields = ("title", "description", "zone__name", "device__name")
+    list_filter = ("status", "severity", "zone__organization")
+    date_hierarchy = "detected_at"
+    ordering = ("-detected_at",)
+    list_select_related = ("zone", "device", "severity")
+    autocomplete_fields = ("device", "reading")
     scoped_fk_fields = {"zone": Zone}
