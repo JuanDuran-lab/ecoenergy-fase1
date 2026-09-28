@@ -1,6 +1,26 @@
+# Entornos virtuales
 .venv/
+venv/
+env/
+
+# Python
 __pycache__/
 *.pyc
+
+# Base de datos local
 db.sqlite3
-.vscode/
+*.sqlite3
+
+# Variables de entorno y secretos
 .env
+*.pem
+
+# Archivos subidos por usuarios y estáticos generados
+media/
+staticfiles/
+
+# Editores / sistema operativo
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
