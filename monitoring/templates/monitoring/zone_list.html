@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Zonas de consumo</h2>
+<div class="row g-4">
+    {% for zone in zones %}
+    <div class="col-12 col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <h3 class="card-title h5">{{ zone.name }}</h3>
+                <p class="card-text"><strong>Límite:</strong> {{ zone.consumption_limit_kwh }} kWh</p>
+                <p class="card-text"><strong>Dispositivos:</strong> {{ zone.device_count }}</p>
+                <a href="{% url 'monitoring:zone_detail' zone.pk %}" class="btn btn-primary">Ver detalle</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-secondary">No existen zonas disponibles.</p>
+    {% endfor %}
+</div>
+{% endblock %}
