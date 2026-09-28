@@ -28,7 +28,7 @@
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card h-100"><div class="card-body">
         <div class="text-secondary small">Consumo últimos {{ window_days }} días</div>
-        <div class="stat-value">{{ zone.consumption_kwh }} <small class="fs-6">kWh</small></div>
+        <div class="stat-value">{{ zone.consumption_kwh|floatformat:"2g" }} <small class="fs-6">kWh</small></div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card h-100"><div class="card-body">
         <div class="text-secondary small">Dispositivos</div>
@@ -64,7 +64,7 @@
                     <td>{{ device.category.name }}</td>
                     <td>{{ device.manufacturer.name }}</td>
                     <td class="text-end">{{ device.nominal_consumption_kwh }} kWh</td>
-                    <td class="text-end">{{ device.consumption_kwh }} kWh</td>
+                    <td class="text-end">{{ device.consumption_kwh|floatformat:"2g" }} kWh</td>
                     <td>{% if device.is_active %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-secondary">No</span>{% endif %}</td>
                 </tr>
                 {% empty %}

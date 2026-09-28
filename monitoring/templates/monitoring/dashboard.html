@@ -62,7 +62,7 @@
                 {% for zone in zones_over_limit %}
                 <li class="list-group-item d-flex justify-content-between">
                     <a href="{% url 'monitoring:zone_detail' zone.pk %}">{{ zone.name }} <span class="text-secondary small">· {{ zone.organization.name }}</span></a>
-                    <span class="text-danger small fw-semibold">{{ zone.consumption_kwh }} / {{ zone.consumption_limit_kwh }} kWh</span>
+                    <span class="text-danger small fw-semibold">{{ zone.consumption_kwh|floatformat:"2g" }} / {{ zone.consumption_limit_kwh }} kWh</span>
                 </li>
                 {% empty %}
                 <li class="list-group-item text-secondary">Todas las zonas están dentro de su límite.</li>
