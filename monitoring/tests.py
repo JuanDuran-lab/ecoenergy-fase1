@@ -246,3 +246,64 @@ class AdminScopingTests(EcoEnergyBaseTest):
         self.device_north.soft_delete()
         response = self.client.get(reverse("admin:monitoring_device_changelist"))
         self.assertNotContains(response, "Aire acondicionado Norte")
+
+
+class SeedCommandTests(TestCase):
+    ENV = {
+        "SEED_ADMIN_PASSWORD": "Admin#Prueba2026",
+        "SEED_SUPERVISOR_PASSWORD": "Super#Prueba2026",
+        "SEED_READER_PASSWORD": "Lector#Prueba2026",
+    }
+
+    def test_seed_creates_more_than_1000_records_and_three_roles(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import call_command
+
+        with mock.patch.dict("os.environ", self.ENV):
+            call_command("seed_data", stdout=StringIO())
+
+        total = sum(
+            model.objects.count()
+            for model in (
+                Organization,
+                Category,
+                ZoneType,
+                ZoneStatus,
+                Manufacturer,
+                AlertSeverity,
+                Zone,
+                Device,
+                ConsumptionReading,
+                Alert,
+            )
+        )
+        self.assertGreaterEqual(total, 1000)
+        self.assertEqual(
+            {
+                user.username: user.groups.get().name
+                for user in User.objects.filter(
+                    username__in=["admin_demo", "supervisor_norte", "lector_sur"]
+                )
+            },
+            {
+                "admin_demo": "Administrador",
+                "supervisor_norte": "Supervisor",
+                "lector_sur": "Lector",
+            },
+        )
+        self.assertTrue(
+            User.objects.get(username="lector_sur").check_password(self.ENV["SEED_READER_PASSWORD"])
+        )
+
+    def test_seed_rejects_weak_password(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import CommandError, call_command
+
+        env = dict(self.ENV, SEED_READER_PASSWORD="corta")
+        with mock.patch.dict("os.environ", env):
+            with self.assertRaises(CommandError):
+                call_command("seed_data", stdout=StringIO())
