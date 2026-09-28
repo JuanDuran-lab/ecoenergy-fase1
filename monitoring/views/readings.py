@@ -1,7 +1,13 @@
 from django.utils import timezone
 
 from core.scoping import scope_queryset
-from core.views import ScopedCreateView, ScopedDetailView, ScopedListView, ScopedUpdateView
+from core.views import (
+    ScopedCreateView,
+    ScopedDetailView,
+    ScopedListView,
+    ScopedSoftDeleteView,
+    ScopedUpdateView,
+)
 
 from ..filters import filter_readings
 from ..forms import ConsumptionReadingForm
@@ -60,3 +66,9 @@ class ReadingUpdateView(ScopedUpdateView):
     model = ConsumptionReading
     form_class = ConsumptionReadingForm
     success_message = "Lectura actualizada correctamente."
+
+
+class ReadingDeleteView(ScopedSoftDeleteView):
+    model = ConsumptionReading
+    success_url_name = "monitoring:reading_list"
+    success_message = "Lectura «{label}» eliminada."

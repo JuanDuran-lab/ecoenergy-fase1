@@ -16,6 +16,9 @@
         {% if perms.monitoring.change_device %}
         <a href="{% url 'monitoring:device_update' device.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
         {% endif %}
+        {% if perms.monitoring.delete_device %}
+        {% include "core/partials/delete_form.html" with obj=device delete_url="monitoring:device_delete" warning="También se eliminarán sus lecturas y alertas." label="Eliminar" %}
+        {% endif %}
     </div>
 </div>
 

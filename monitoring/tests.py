@@ -613,3 +613,77 @@ class CrudTests(EcoEnergyBaseTest):
             reverse("monitoring:alert_create"), self.alert_data(zone=other_zone.pk)
         )
         self.assertContains(response, "no pertenece a la zona")
+
+
+class SoftDeleteViewTests(EcoEnergyBaseTest):
+    def setUp(self):
+        super().setUp()
+        self.operator_north.user_permissions.add(
+            Permission.objects.get(codename="delete_device"),
+            Permission.objects.get(codename="delete_zone"),
+        )
+        self.client.login(username="operador_norte", password=TEST_PASSWORD)
+        self.url = reverse("monitoring:device_delete", args=[self.device_north.pk])
+
+    def test_get_is_not_allowed(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(Device.objects.filter(pk=self.device_north.pk).exists())
+
+    def test_post_without_csrf_token_is_rejected(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="operador_norte", password=TEST_PASSWORD)
+        response = client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Device.objects.filter(pk=self.device_north.pk).exists())
+
+    def test_post_with_csrf_token_soft_deletes(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        client.login(username="operador_norte", password=TEST_PASSWORD)
+        detail = client.get(reverse("monitoring:device_detail", args=[self.device_north.pk]))
+        token = detail.cookies["csrftoken"].value
+        response = client.post(self.url, {"csrfmiddlewaretoken": token})
+        self.assertRedirects(response, reverse("monitoring:device_list"))
+        self.assertFalse(Device.objects.filter(pk=self.device_north.pk).exists())
+        self.assertIsNotNone(Device.all_objects.get(pk=self.device_north.pk).deleted_at)
+
+    def test_deleted_device_not_in_list_and_detail_404(self):
+        self.client.post(self.url)
+        response = self.client.get(reverse("monitoring:device_list"))
+        self.assertNotIn(self.device_north, list(response.context["devices"]))
+        response = self.client.get(reverse("monitoring:device_detail", args=[self.device_north.pk]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_deleting_twice_returns_404(self):
+        self.client.post(self.url)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_cannot_delete_other_organization_record(self):
+        response = self.client.post(
+            reverse("monitoring:device_delete", args=[self.device_south.pk])
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(Device.objects.filter(pk=self.device_south.pk).exists())
+
+    def test_user_without_delete_permission_gets_403(self):
+        self.operator_north.user_permissions.remove(Permission.objects.get(codename="delete_device"))
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Device.objects.filter(pk=self.device_north.pk).exists())
+
+    def test_zone_delete_cascades_logically(self):
+        self.client.post(reverse("monitoring:zone_delete", args=[self.zone_north.pk]))
+        self.assertFalse(Zone.objects.filter(pk=self.zone_north.pk).exists())
+        self.assertFalse(Device.objects.filter(pk=self.device_north.pk).exists())
+        self.assertTrue(Zone.all_objects.filter(pk=self.zone_north.pk).exists())
+
+    def test_list_renders_confirm_delete_form(self):
+        response = self.client.get(reverse("monitoring:device_list"))
+        self.assertContains(response, "js-confirm-delete")
+        self.assertContains(response, "csrfmiddlewaretoken")
+        self.assertContains(response, "sweetalert2")

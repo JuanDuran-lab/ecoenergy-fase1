@@ -1,4 +1,10 @@
-from core.views import ScopedCreateView, ScopedDetailView, ScopedListView, ScopedUpdateView
+from core.views import (
+    ScopedCreateView,
+    ScopedDetailView,
+    ScopedListView,
+    ScopedSoftDeleteView,
+    ScopedUpdateView,
+)
 
 from ..forms import ZoneForm
 from ..models import Zone
@@ -74,3 +80,9 @@ class ZoneSummaryView(ScopedListView):
         context["zones_over_limit"] = sum(1 for zone in zones if zone.over_limit)
         context["window_days"] = CONSUMPTION_WINDOW_DAYS
         return context
+
+
+class ZoneDeleteView(ScopedSoftDeleteView):
+    model = Zone
+    success_url_name = "monitoring:zone_list"
+    success_message = "Zona «{label}» eliminada junto a sus dispositivos, lecturas y alertas."

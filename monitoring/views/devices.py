@@ -1,5 +1,11 @@
 from core.scoping import scope_queryset
-from core.views import ScopedCreateView, ScopedDetailView, ScopedListView, ScopedUpdateView
+from core.views import (
+    ScopedCreateView,
+    ScopedDetailView,
+    ScopedListView,
+    ScopedSoftDeleteView,
+    ScopedUpdateView,
+)
 
 from ..filters import filter_devices
 from ..forms import DeviceForm
@@ -65,3 +71,9 @@ class DeviceUpdateView(ScopedUpdateView):
     model = Device
     form_class = DeviceForm
     success_message = "Dispositivo «{obj.name}» actualizado correctamente."
+
+
+class DeviceDeleteView(ScopedSoftDeleteView):
+    model = Device
+    success_url_name = "monitoring:device_list"
+    success_message = "Dispositivo «{label}» eliminado junto a sus lecturas y alertas."

@@ -13,6 +13,9 @@
         {% if perms.monitoring.change_consumptionreading %}
         <a href="{% url 'monitoring:reading_update' reading.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
         {% endif %}
+        {% if perms.monitoring.delete_consumptionreading %}
+        {% include "core/partials/delete_form.html" with obj=reading delete_url="monitoring:reading_delete" warning="" label="Eliminar" %}
+        {% endif %}
     </div>
 </div>
 

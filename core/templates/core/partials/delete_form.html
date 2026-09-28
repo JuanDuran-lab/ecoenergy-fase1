@@ -1,0 +1,11 @@
+{% comment %}
+Formulario de eliminación: POST + token CSRF. El script confirm-delete.js
+intercepta el envío y pide confirmación con SweetAlert2.
+{% endcomment %}
+<form method="post" action="{% url delete_url obj.pk %}" class="d-inline js-confirm-delete"
+      data-item="{{ obj }}" data-warning="{{ warning|default:'' }}">
+    {% csrf_token %}
+    <button type="submit" class="btn {% if label %}btn-outline-danger{% else %}btn-sm btn-outline-danger{% endif %}" title="Eliminar">
+        <i class="bi bi-trash"></i>{% if label %} {{ label }}{% endif %}
+    </button>
+</form>

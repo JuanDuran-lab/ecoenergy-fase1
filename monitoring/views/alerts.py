@@ -1,7 +1,13 @@
 from django.utils import timezone
 
 from core.scoping import scope_queryset
-from core.views import ScopedCreateView, ScopedDetailView, ScopedListView, ScopedUpdateView
+from core.views import (
+    ScopedCreateView,
+    ScopedDetailView,
+    ScopedListView,
+    ScopedSoftDeleteView,
+    ScopedUpdateView,
+)
 
 from ..filters import filter_alerts
 from ..forms import AlertForm
@@ -55,3 +61,9 @@ class AlertUpdateView(ScopedUpdateView):
     model = Alert
     form_class = AlertForm
     success_message = "Alerta «{obj.title}» actualizada correctamente."
+
+
+class AlertDeleteView(ScopedSoftDeleteView):
+    model = Alert
+    success_url_name = "monitoring:alert_list"
+    success_message = "Alerta «{label}» eliminada."
