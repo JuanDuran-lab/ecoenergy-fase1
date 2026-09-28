@@ -2,3 +2,6 @@
 {% if can_change %}
 <a href="{% url edit_url obj.pk %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
 {% endif %}
+{% if can_delete %}
+{% include "core/partials/delete_form.html" with obj=obj delete_url=delete_url warning=warning %}
+{% endif %}

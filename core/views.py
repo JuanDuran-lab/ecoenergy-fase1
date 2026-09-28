@@ -7,9 +7,13 @@ permiso y scoping) se aplica siempre de la misma forma.
 """
 
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
+from django.shortcuts import redirect
 from django.urls import reverse
+from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
+from django.views.generic.detail import SingleObjectMixin
 
 from .mixins import ModelPermissionMixin, OrganizationScopedMixin
 from .pagination import SessionPaginationMixin
@@ -93,3 +97,34 @@ class ScopedUpdateView(
 ):
     permission_action = "change"
     template_name = "core/form.html"
+
+
+class ScopedSoftDeleteView(
+    ModelPermissionMixin, OrganizationScopedMixin, SingleObjectMixin, View
+):
+    """
+    Eliminación segura con borrado lógico.
+
+    - Solo acepta POST (un GET responde 405), y el POST exige token CSRF
+      gracias a CsrfViewMiddleware.
+    - ModelPermissionMixin exige sesión y el permiso delete_<modelo>.
+    - get_object() usa el QuerySet con scoping: un registro de otra
+      organización (o ya eliminado) responde 404.
+    - Nunca borra la fila: llama a soft_delete(), que registra deleted_at.
+
+    La confirmación con SweetAlert2 es solo una ayuda visual; toda la
+    seguridad está aquí, en el servidor.
+    """
+
+    permission_action = "delete"
+    http_method_names = ["post"]
+    success_url_name = None
+    success_message = "Registro eliminado correctamente."
+
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        label = str(self.object)
+        with transaction.atomic():
+            self.object.soft_delete()
+        messages.success(request, self.success_message.format(label=label))
+        return redirect(self.success_url_name)

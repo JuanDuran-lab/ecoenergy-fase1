@@ -44,7 +44,7 @@
                     <td class="text-end {% if zone.consumption_kwh > zone.consumption_limit_kwh %}text-danger fw-semibold{% endif %}">{{ zone.consumption_kwh }} kWh</td>
                     <td class="text-end">{{ zone.consumption_limit_kwh }} kWh</td>
                     <td class="text-end text-nowrap">
-                        {% include "core/partials/row_actions.html" with obj=zone view_url="monitoring:zone_detail" edit_url="monitoring:zone_update" delete_url="monitoring:zone_delete" can_change=perms.monitoring.change_zone can_delete=perms.monitoring.delete_zone %}
+                        {% include "core/partials/row_actions.html" with obj=zone view_url="monitoring:zone_detail" edit_url="monitoring:zone_update" delete_url="monitoring:zone_delete" can_change=perms.monitoring.change_zone can_delete=perms.monitoring.delete_zone warning="También se eliminarán sus dispositivos, lecturas y alertas." %}
                     </td>
                 </tr>
                 {% empty %}
