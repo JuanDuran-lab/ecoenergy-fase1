@@ -1,11 +1,13 @@
 from decimal import Decimal
 
+from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Prefetch
 from django.shortcuts import get_object_or_404, render
 
 from .models import Device, Zone
 
 
+@login_required
 def zone_list(request):
     zones = (
         Zone.objects.select_related("organization", "zone_type", "status")
@@ -15,6 +17,7 @@ def zone_list(request):
     return render(request, "monitoring/zone_list.html", {"zones": zones})
 
 
+@login_required
 def zone_detail(request, pk):
     zone = get_object_or_404(
         Zone.objects.select_related("organization", "zone_type", "status"), pk=pk
@@ -36,6 +39,7 @@ def zone_detail(request, pk):
     )
 
 
+@login_required
 def zone_summary(request):
     zones = (
         Zone.objects.select_related("organization")

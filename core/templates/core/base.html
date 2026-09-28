@@ -1,23 +1,56 @@
-<!DOCTYPE html>
+{% load static %}<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}EcoEnergy{% endblock %}</title>
+    <title>{% block title %}EcoEnergy{% endblock %} · EcoEnergy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="{% static 'core/css/app.css' %}" rel="stylesheet">
 </head>
-<body class="bg-light">
-    <header class="bg-dark text-white">
-        <div class="container d-flex flex-wrap justify-content-between align-items-center py-3">
-            <h1 class="h3 mb-0">EcoEnergy</h1>
-            <nav class="d-flex gap-2">
-                <a href="{% url 'monitoring:zone_list' %}" class="btn btn-outline-light">Zonas</a>
-                <a href="{% url 'monitoring:zone_summary' %}" class="btn btn-outline-light">Resumen de consumo</a>
-            </nav>
+<body class="bg-light d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success-subtle eco-navbar">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="{% url 'home' %}">
+                <i class="bi bi-lightning-charge-fill"></i> EcoEnergy
+            </a>
+            {% if user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                    aria-controls="mainNav" aria-expanded="false" aria-label="Menú">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav me-auto">
+                    {% block nav_items %}{% include "core/partials/nav_items.html" %}{% endblock %}
+                </ul>
+                <div class="d-flex align-items-center gap-3 text-white">
+                    <span class="small">
+                        <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                        <span class="badge text-bg-light ms-1">{{ user.groups.first.name|default:"Sin rol" }}</span>
+                        <span class="d-none d-md-inline opacity-75">· {{ user.profile.organization.name|default:"Todas las organizaciones" }}</span>
+                    </span>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-light">
+                            <i class="bi bi-box-arrow-right"></i> Salir
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
         </div>
-    </header>
-    <main class="container py-4">
+    </nav>
+
+    <main class="container py-4 flex-grow-1">
+        {% include "core/partials/messages.html" %}
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="border-top py-3 text-center text-secondary small">
+        EcoEnergy · Programación Back End · INACAP
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
