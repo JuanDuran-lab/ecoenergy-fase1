@@ -103,3 +103,12 @@ erDiagram
         int user_id FK
         bigint organization_id FK
     }
+    PASSWORD_RESET_CODE {
+        bigint id PK
+        int user_id FK
+        varchar code_hash
+        datetime created_at
+        datetime expires_at
+        datetime used_at
+        smallint attempts
+    }
