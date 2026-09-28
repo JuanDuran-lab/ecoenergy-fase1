@@ -13,7 +13,7 @@
         <div class="text-secondary small">Dispositivos</div><div class="stat-value">{{ total_devices }}</div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
-        <div class="text-secondary small">Consumo total</div><div class="stat-value">{{ total_consumption }} <small class="fs-6">kWh</small></div>
+        <div class="text-secondary small">Consumo total</div><div class="stat-value">{{ total_consumption|floatformat:"2g" }} <small class="fs-6">kWh</small></div>
     </div></div></div>
     <div class="col-6 col-lg-3"><div class="card shadow-sm stat-card"><div class="card-body">
         <div class="text-secondary small">Zonas sobre el límite</div><div class="stat-value text-danger">{{ zones_over_limit }}</div>
@@ -32,7 +32,7 @@
                     <td><a href="{% url 'monitoring:zone_detail' zone.pk %}">{{ zone.name }}</a></td>
                     <td>{{ zone.organization.name }}</td>
                     <td class="text-end">{{ zone.device_count }}</td>
-                    <td class="text-end">{{ zone.consumption_kwh }} kWh</td>
+                    <td class="text-end">{{ zone.consumption_kwh|floatformat:"2g" }} kWh</td>
                     <td class="text-end">{{ zone.consumption_limit_kwh }} kWh</td>
                     <td>
                         {% if zone.over_limit %}<span class="text-danger fw-bold">LÍMITE SUPERADO</span>

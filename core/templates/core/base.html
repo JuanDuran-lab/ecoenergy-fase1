@@ -9,7 +9,7 @@
     <link href="{% static 'core/css/app.css' %}" rel="stylesheet">
 </head>
 <body class="bg-light d-flex flex-column min-vh-100">
-    <nav class="navbar navbar-expand-lg navbar-dark bg-success-subtle eco-navbar">
+    <nav class="navbar navbar-expand-lg eco-navbar" data-bs-theme="dark">
         <div class="container">
             <a class="navbar-brand fw-semibold" href="{% url 'monitoring:dashboard' %}">
                 <i class="bi bi-lightning-charge-fill"></i> EcoEnergy
@@ -24,10 +24,10 @@
                     {% block nav_items %}{% include "core/partials/nav_items.html" %}{% endblock %}
                 </ul>
                 <div class="d-flex align-items-center gap-3 text-white">
-                    <span class="small">
+                    <span class="small text-nowrap" title="{{ user.profile.organization.name|default:'Todas las organizaciones' }}">
                         <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
                         <span class="badge text-bg-light ms-1">{{ user.groups.first.name|default:"Sin rol" }}</span>
-                        <span class="d-none d-md-inline opacity-75">· {{ user.profile.organization.name|default:"Todas las organizaciones" }}</span>
+                        <span class="d-none d-xxl-inline opacity-75">· {{ user.profile.organization.name|default:"Todas las organizaciones" }}</span>
                     </span>
                     <form method="post" action="{% url 'accounts:logout' %}" class="m-0">
                         {% csrf_token %}

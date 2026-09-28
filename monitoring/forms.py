@@ -38,6 +38,8 @@ class BootstrapFormMixin:
 
     def apply_bootstrap(self):
         for field in self.fields.values():
+            if isinstance(field, forms.ModelChoiceField):
+                field.empty_label = "Seleccione una opción"
             widget = field.widget
             if isinstance(widget, forms.CheckboxInput):
                 css = "form-check-input"

@@ -41,7 +41,7 @@
                     <dt class="col-sm-4">Categoría</dt><dd class="col-sm-8">{{ device.category.name }}</dd>
                     <dt class="col-sm-4">Fabricante</dt><dd class="col-sm-8">{{ device.manufacturer.name }}</dd>
                     <dt class="col-sm-4">Consumo nominal</dt><dd class="col-sm-8">{{ device.nominal_consumption_kwh }} kWh</dd>
-                    <dt class="col-sm-4">Consumo últimos {{ window_days }} días</dt><dd class="col-sm-8">{{ device.consumption_kwh }} kWh</dd>
+                    <dt class="col-sm-4">Consumo últimos {{ window_days }} días</dt><dd class="col-sm-8">{{ device.consumption_kwh|floatformat:"2g" }} kWh</dd>
                     <dt class="col-sm-4">Lecturas registradas</dt><dd class="col-sm-8">{{ device.reading_count }}</dd>
                     <dt class="col-sm-4">Instalado el</dt><dd class="col-sm-8">{{ device.installed_on|date:"d-m-Y" }}</dd>
                     <dt class="col-sm-4">Activo</dt><dd class="col-sm-8">{% if device.is_active %}Sí{% else %}No{% endif %}</dd>

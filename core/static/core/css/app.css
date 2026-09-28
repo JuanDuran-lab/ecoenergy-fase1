@@ -29,3 +29,12 @@
     object-fit: contain;
     border-radius: 8px;
 }
+
+.table td.text-end,
+.table th.text-end {
+    white-space: nowrap;
+}
+
+.eco-navbar .btn {
+    white-space: nowrap;
+}

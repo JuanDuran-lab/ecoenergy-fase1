@@ -62,7 +62,7 @@
                     <td>{{ device.zone.name }}{% if user.is_superuser %}<div class="small text-secondary">{{ device.zone.organization.name }}</div>{% endif %}</td>
                     <td>{{ device.category.name }}</td>
                     <td class="text-end">{{ device.nominal_consumption_kwh }}</td>
-                    <td class="text-end">{{ device.consumption_kwh }}</td>
+                    <td class="text-end">{{ device.consumption_kwh|floatformat:"2g" }}</td>
                     <td>{% if device.is_active %}<span class="badge text-bg-success">Sí</span>{% else %}<span class="badge text-bg-secondary">No</span>{% endif %}</td>
                     <td class="text-end text-nowrap">
                         {% include "core/partials/row_actions.html" with obj=device view_url="monitoring:device_detail" edit_url="monitoring:device_update" delete_url="monitoring:device_delete" can_change=perms.monitoring.change_device can_delete=perms.monitoring.delete_device warning="También se eliminarán sus lecturas y alertas." %}
