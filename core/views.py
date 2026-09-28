@@ -12,11 +12,13 @@ from django.urls import reverse
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from .mixins import ModelPermissionMixin, OrganizationScopedMixin
+from .pagination import SessionPaginationMixin
 
 
-class ScopedListView(ModelPermissionMixin, OrganizationScopedMixin, ListView):
+class ScopedListView(
+    ModelPermissionMixin, OrganizationScopedMixin, SessionPaginationMixin, ListView
+):
     permission_action = "view"
-    paginate_by = 15
     search_fields = ()
 
     def get_search_term(self):
