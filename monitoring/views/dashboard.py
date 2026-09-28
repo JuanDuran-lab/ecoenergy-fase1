@@ -22,9 +22,9 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         stats = []
         for model, perm, icon, url in [
             (Zone, "view_zone", "bi-grid-3x3-gap", "monitoring:zone_list"),
-            (Device, "view_device", "bi-cpu", None),
-            (ConsumptionReading, "view_consumptionreading", "bi-activity", None),
-            (Alert, "view_alert", "bi-exclamation-triangle", None),
+            (Device, "view_device", "bi-cpu", "monitoring:device_list"),
+            (ConsumptionReading, "view_consumptionreading", "bi-activity", "monitoring:reading_list"),
+            (Alert, "view_alert", "bi-exclamation-triangle", "monitoring:alert_list"),
         ]:
             if user.has_perm(f"monitoring.{perm}"):
                 stats.append(

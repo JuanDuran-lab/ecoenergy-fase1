@@ -8,8 +8,11 @@
         <h1 class="h3 mb-0">{{ zone.name }}</h1>
         <p class="text-secondary mb-0">{{ zone.organization.name }} · {{ zone.zone_type.name }} · {{ zone.status.name }}</p>
     </div>
-    <div class="d-flex gap-2">
+    <div class="d-flex flex-wrap gap-2">
         <a href="{% url 'monitoring:zone_list' %}" class="btn btn-outline-secondary">← Volver</a>
+        {% if perms.monitoring.change_zone %}
+        <a href="{% url 'monitoring:zone_update' zone.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+        {% endif %}
     </div>
 </div>
 
@@ -38,7 +41,12 @@
     </div></div></div>
 </div>
 
-<h2 class="h5 mt-5 mb-3">Dispositivos de la zona</h2>
+<div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+    <h2 class="h5 mb-0">Dispositivos de la zona</h2>
+    {% if perms.monitoring.add_device %}
+    <a href="{% url 'monitoring:device_create' %}?zone={{ zone.pk }}" class="btn btn-sm btn-success"><i class="bi bi-plus-lg"></i> Agregar dispositivo</a>
+    {% endif %}
+</div>
 <div class="card shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -48,7 +56,7 @@
             <tbody>
                 {% for device in devices %}
                 <tr>
-                    <td>{{ device.name }}</td>
+                    <td>{% if perms.monitoring.view_device %}<a href="{% url 'monitoring:device_detail' device.pk %}">{{ device.name }}</a>{% else %}{{ device.name }}{% endif %}</td>
                     <td class="small">{{ device.serial_number }}</td>
                     <td>{{ device.category.name }}</td>
                     <td>{{ device.manufacturer.name }}</td>

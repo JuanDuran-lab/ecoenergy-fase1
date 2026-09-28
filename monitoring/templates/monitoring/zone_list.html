@@ -5,7 +5,18 @@
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h1 class="h3 mb-0">Zonas</h1>
+    <div class="d-flex gap-2">
+        <a href="{% url 'monitoring:zone_summary' %}" class="btn btn-outline-secondary"><i class="bi bi-bar-chart"></i> Resumen</a>
+        {% if perms.monitoring.add_zone %}
+        <a href="{% url 'monitoring:zone_create' %}" class="btn btn-success"><i class="bi bi-plus-lg"></i> Nueva zona</a>
+        {% endif %}
+    </div>
 </div>
+
+<form method="get" class="row g-2 mb-3">
+    {% include "core/partials/search_box.html" with placeholder="Buscar por nombre, tipo o estado" %}
+    <div class="col-auto"><button class="btn btn-outline-success"><i class="bi bi-search"></i> Filtrar</button></div>
+</form>
 
 <div class="card shadow-sm">
     <div class="table-responsive">
@@ -19,7 +30,7 @@
                     <th class="text-end">Dispositivos</th>
                     <th class="text-end">Consumo 30 días</th>
                     <th class="text-end">Límite</th>
-                    <th></th>
+                    <th class="text-end">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,10 +43,12 @@
                     <td class="text-end">{{ zone.device_count }}</td>
                     <td class="text-end {% if zone.consumption_kwh > zone.consumption_limit_kwh %}text-danger fw-semibold{% endif %}">{{ zone.consumption_kwh }} kWh</td>
                     <td class="text-end">{{ zone.consumption_limit_kwh }} kWh</td>
-                    <td class="text-end text-nowrap"><a href="{% url 'monitoring:zone_detail' zone.pk %}" class="btn btn-sm btn-outline-secondary" title="Ver"><i class="bi bi-eye"></i></a></td>
+                    <td class="text-end text-nowrap">
+                        {% include "core/partials/row_actions.html" with obj=zone view_url="monitoring:zone_detail" edit_url="monitoring:zone_update" delete_url="monitoring:zone_delete" can_change=perms.monitoring.change_zone can_delete=perms.monitoring.delete_zone %}
+                    </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-secondary py-4">No hay zonas registradas.</td></tr>
+                <tr><td colspan="8" class="text-center text-secondary py-4">No hay zonas que coincidan.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

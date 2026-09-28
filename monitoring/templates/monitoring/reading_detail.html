@@ -1,0 +1,39 @@
+{% extends "core/base.html" %}
+
+{% block title %}Lectura{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-0">Lectura del {{ reading.reading_at|date:"d-m-Y H:i" }}</h1>
+        <p class="text-secondary mb-0"><a href="{% url 'monitoring:device_detail' reading.device.pk %}">{{ reading.device.name }}</a> · {{ reading.device.zone.name }} · {{ reading.device.zone.organization.name }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'monitoring:reading_list' %}" class="btn btn-outline-secondary">← Volver</a>
+        {% if perms.monitoring.change_consumptionreading %}
+        <a href="{% url 'monitoring:reading_update' reading.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Consumo registrado</dt>
+            <dd class="col-sm-8 {% if reading.is_over_nominal %}text-danger fw-semibold{% endif %}">{{ reading.consumption_kwh }} kWh</dd>
+            <dt class="col-sm-4">Consumo nominal del dispositivo</dt><dd class="col-sm-8">{{ reading.device.nominal_consumption_kwh }} kWh</dd>
+            <dt class="col-sm-4">Observaciones</dt><dd class="col-sm-8">{{ reading.notes|default:"-" }}</dd>
+            <dt class="col-sm-4">Registrada el</dt><dd class="col-sm-8">{{ reading.created_at|date:"d-m-Y H:i" }}</dd>
+        </dl>
+    </div>
+</div>
+
+<h2 class="h5 mb-3">Alertas originadas por esta lectura</h2>
+<ul class="list-group shadow-sm">
+    {% for alert in alerts %}
+    <li class="list-group-item"><span class="badge" style="background:{{ alert.severity.color }}">{{ alert.severity.name }}</span> <a href="{% url 'monitoring:alert_detail' alert.pk %}">{{ alert.title }}</a> · {{ alert.get_status_display }}</li>
+    {% empty %}
+    <li class="list-group-item text-secondary">Ninguna.</li>
+    {% endfor %}
+</ul>
+{% endblock %}

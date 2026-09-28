@@ -1,6 +1,16 @@
-<li class="nav-item"><a class="nav-link" href="{% url 'monitoring:dashboard' %}">Inicio</a></li>
+{% with name=request.resolver_match.url_name %}
+<li class="nav-item"><a class="nav-link {% if name == 'dashboard' %}active{% endif %}" href="{% url 'monitoring:dashboard' %}">Inicio</a></li>
 {% if perms.monitoring.view_zone %}
-<li class="nav-item"><a class="nav-link" href="{% url 'monitoring:zone_list' %}">Zonas</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'monitoring:zone_summary' %}">Resumen</a></li>
+<li class="nav-item"><a class="nav-link {% if name|slice:':5' == 'zone_' %}active{% endif %}" href="{% url 'monitoring:zone_list' %}">Zonas</a></li>
+{% endif %}
+{% if perms.monitoring.view_device %}
+<li class="nav-item"><a class="nav-link {% if name|slice:':7' == 'device_' %}active{% endif %}" href="{% url 'monitoring:device_list' %}">Dispositivos</a></li>
+{% endif %}
+{% if perms.monitoring.view_consumptionreading %}
+<li class="nav-item"><a class="nav-link {% if name|slice:':8' == 'reading_' %}active{% endif %}" href="{% url 'monitoring:reading_list' %}">Lecturas</a></li>
+{% endif %}
+{% if perms.monitoring.view_alert %}
+<li class="nav-item"><a class="nav-link {% if name|slice:':6' == 'alert_' %}active{% endif %}" href="{% url 'monitoring:alert_list' %}">Alertas</a></li>
 {% endif %}
 {% if user.is_staff %}<li class="nav-item"><a class="nav-link" href="{% url 'admin:index' %}">Admin</a></li>{% endif %}
+{% endwith %}

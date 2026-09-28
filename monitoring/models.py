@@ -11,6 +11,7 @@ from django.core.validators import (
 )
 from django.db import models
 from django.db.models import Q
+from django.urls import reverse
 from django.utils import timezone
 
 from core.models import SoftDeleteModel
@@ -218,6 +219,9 @@ class Zone(SoftDeleteModel):
     def __str__(self):
         return f"{self.name} - {self.organization.name}"
 
+    def get_absolute_url(self):
+        return reverse("monitoring:zone_detail", args=[self.pk])
+
     def clean(self):
         super().clean()
         if (
@@ -323,6 +327,9 @@ class Device(SoftDeleteModel):
     def __str__(self):
         return f"{self.name} - {self.zone.name}"
 
+    def get_absolute_url(self):
+        return reverse("monitoring:device_detail", args=[self.pk])
+
     def clean(self):
         super().clean()
         if self.installed_on and self.installed_on > timezone.localdate():
@@ -379,6 +386,9 @@ class ConsumptionReading(SoftDeleteModel):
 
     def __str__(self):
         return f"{self.device.name} - {self.reading_at:%d-%m-%Y %H:%M}"
+
+    def get_absolute_url(self):
+        return reverse("monitoring:reading_detail", args=[self.pk])
 
     @property
     def is_over_nominal(self):
@@ -452,6 +462,9 @@ class Alert(SoftDeleteModel):
 
     def __str__(self):
         return self.title
+
+    def get_absolute_url(self):
+        return reverse("monitoring:alert_detail", args=[self.pk])
 
     def clean(self):
         super().clean()
