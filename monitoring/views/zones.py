@@ -53,7 +53,10 @@ class ZoneSummaryView(ScopedListView):
     model = Zone
     template_name = "monitoring/zone_summary.html"
     context_object_name = "zones"
-    paginate_by = None
+
+    def get_paginate_by(self, queryset):
+        # El resumen muestra todas las zonas en una sola tabla.
+        return None
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("organization")
