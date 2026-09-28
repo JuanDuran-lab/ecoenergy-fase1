@@ -687,3 +687,67 @@ class SoftDeleteViewTests(EcoEnergyBaseTest):
         self.assertContains(response, "js-confirm-delete")
         self.assertContains(response, "csrfmiddlewaretoken")
         self.assertContains(response, "sweetalert2")
+
+
+class ExcelExportTests(EcoEnergyBaseTest):
+    def setUp(self):
+        super().setUp()
+        now = timezone.now()
+        self.reading_north = ConsumptionReading.objects.create(
+            device=self.device_north, reading_at=now - timedelta(hours=3), consumption_kwh=Decimal("40.00")
+        )
+        self.reading_north_deleted = ConsumptionReading.objects.create(
+            device=self.device_north, reading_at=now - timedelta(hours=2), consumption_kwh=Decimal("41.00")
+        )
+        self.reading_north_deleted.soft_delete()
+        self.reading_south = ConsumptionReading.objects.create(
+            device=self.device_south, reading_at=now - timedelta(hours=1), consumption_kwh=Decimal("20.00")
+        )
+        self.url = reverse("monitoring:reading_export")
+
+    def grant(self, *codenames):
+        self.operator_north.user_permissions.add(
+            *Permission.objects.filter(codename__in=codenames)
+        )
+
+    def load_rows(self, response):
+        from io import BytesIO
+
+        from openpyxl import load_workbook
+
+        workbook = load_workbook(BytesIO(response.content))
+        sheet = workbook["Lecturas"]
+        return [row for row in sheet.iter_rows(values_only=True)]
+
+    def test_requires_export_permission(self):
+        self.grant("view_consumptionreading")
+        self.client.login(username="operador_norte", password=TEST_PASSWORD)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 403)
+
+    def test_export_is_real_xlsx_scoped_and_without_deleted(self):
+        self.grant("view_consumptionreading", "export_consumptionreading")
+        self.client.login(username="operador_norte", password=TEST_PASSWORD)
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        self.assertIn("attachment;", response["Content-Disposition"])
+
+        rows = self.load_rows(response)
+        self.assertEqual(rows[0][0], "ID")
+        exported_ids = [row[0] for row in rows[1:]]
+        self.assertEqual(exported_ids, [self.reading_north.pk])
+
+    def test_export_respects_list_filters(self):
+        self.grant("view_consumptionreading", "export_consumptionreading")
+        self.client.login(username="operador_norte", password=TEST_PASSWORD)
+        response = self.client.get(self.url, {"q": "no-existe"})
+        self.assertEqual(len(self.load_rows(response)), 1)  # solo encabezados
+
+    def test_anonymous_redirected(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
