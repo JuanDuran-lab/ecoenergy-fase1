@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 
-from .models import UserProfile
+from .models import PasswordResetCode, UserProfile
 
 
 class UserProfileInline(admin.StackedInline):
@@ -55,3 +55,19 @@ class UserProfileAdmin(admin.ModelAdmin):
     list_filter = ("organization",)
     ordering = ("user__username",)
     list_select_related = ("user", "organization")
+
+
+@admin.register(PasswordResetCode)
+class PasswordResetCodeAdmin(admin.ModelAdmin):
+    """Solo lectura: permite auditar que el código se guarda hasheado."""
+
+    list_display = ("user", "created_at", "expires_at", "used_at", "attempts")
+    list_filter = ("used_at",)
+    search_fields = ("user__username", "user__email")
+    readonly_fields = ("user", "code_hash", "created_at", "expires_at", "used_at", "attempts")
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

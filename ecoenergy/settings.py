@@ -130,7 +130,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
+    {
+        # Mayúscula, minúscula, número y carácter especial.
+        "NAME": "accounts.validators.PasswordComplexityValidator",
+    },
 ]
+
+LOGIN_URL = "accounts:login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "accounts:login"
 
 
 # ---------------------------------------------------------------------------
