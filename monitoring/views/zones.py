@@ -1,35 +1,28 @@
-from django.views.generic import DetailView, ListView
+from core.views import ScopedCreateView, ScopedDetailView, ScopedListView, ScopedUpdateView
 
-from core.mixins import ModelPermissionMixin, OrganizationScopedMixin
-
+from ..forms import ZoneForm
 from ..models import Zone
 from ..queries import CONSUMPTION_WINDOW_DAYS, annotate_device_metrics, annotate_zone_metrics
 
 
-class ZoneListView(ModelPermissionMixin, OrganizationScopedMixin, ListView):
+class ZoneListView(ScopedListView):
     model = Zone
-    permission_action = "view"
     template_name = "monitoring/zone_list.html"
     context_object_name = "zones"
-    paginate_by = 15
+    search_fields = ("name", "description", "zone_type__name", "status__name")
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
-            "organization", "zone_type", "status"
-        )
+        queryset = super().get_queryset().select_related("organization", "zone_type", "status")
         return annotate_zone_metrics(queryset).order_by("organization__name", "name")
 
 
-class ZoneDetailView(ModelPermissionMixin, OrganizationScopedMixin, DetailView):
+class ZoneDetailView(ScopedDetailView):
     model = Zone
-    permission_action = "view"
     template_name = "monitoring/zone_detail.html"
     context_object_name = "zone"
 
     def get_queryset(self):
-        queryset = super().get_queryset().select_related(
-            "organization", "zone_type", "status"
-        )
+        queryset = super().get_queryset().select_related("organization", "zone_type", "status")
         return annotate_zone_metrics(queryset)
 
     def get_context_data(self, **kwargs):
@@ -43,11 +36,24 @@ class ZoneDetailView(ModelPermissionMixin, OrganizationScopedMixin, DetailView):
         return context
 
 
-class ZoneSummaryView(ModelPermissionMixin, OrganizationScopedMixin, ListView):
+class ZoneCreateView(ScopedCreateView):
     model = Zone
-    permission_action = "view"
+    form_class = ZoneForm
+    list_url_name = "monitoring:zone_list"
+    success_message = "Zona «{obj.name}» creada correctamente."
+
+
+class ZoneUpdateView(ScopedUpdateView):
+    model = Zone
+    form_class = ZoneForm
+    success_message = "Zona «{obj.name}» actualizada correctamente."
+
+
+class ZoneSummaryView(ScopedListView):
+    model = Zone
     template_name = "monitoring/zone_summary.html"
     context_object_name = "zones"
+    paginate_by = None
 
     def get_queryset(self):
         queryset = super().get_queryset().select_related("organization")

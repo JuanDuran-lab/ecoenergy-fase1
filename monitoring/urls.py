@@ -1,13 +1,30 @@
 from django.urls import path
 
-from .views import dashboard, zones
+from .views import alerts, dashboard, devices, readings, zones
 
 app_name = "monitoring"
 
 urlpatterns = [
     path("", dashboard.DashboardView.as_view(), name="dashboard"),
+    path("resumen-zonas/", zones.ZoneSummaryView.as_view(), name="zone_summary"),
     # Zonas
     path("zonas/", zones.ZoneListView.as_view(), name="zone_list"),
+    path("zonas/nueva/", zones.ZoneCreateView.as_view(), name="zone_create"),
     path("zonas/<int:pk>/", zones.ZoneDetailView.as_view(), name="zone_detail"),
-    path("resumen-zonas/", zones.ZoneSummaryView.as_view(), name="zone_summary"),
+    path("zonas/<int:pk>/editar/", zones.ZoneUpdateView.as_view(), name="zone_update"),
+    # Dispositivos
+    path("dispositivos/", devices.DeviceListView.as_view(), name="device_list"),
+    path("dispositivos/nuevo/", devices.DeviceCreateView.as_view(), name="device_create"),
+    path("dispositivos/<int:pk>/", devices.DeviceDetailView.as_view(), name="device_detail"),
+    path("dispositivos/<int:pk>/editar/", devices.DeviceUpdateView.as_view(), name="device_update"),
+    # Lecturas de consumo
+    path("lecturas/", readings.ReadingListView.as_view(), name="reading_list"),
+    path("lecturas/nueva/", readings.ReadingCreateView.as_view(), name="reading_create"),
+    path("lecturas/<int:pk>/", readings.ReadingDetailView.as_view(), name="reading_detail"),
+    path("lecturas/<int:pk>/editar/", readings.ReadingUpdateView.as_view(), name="reading_update"),
+    # Alertas
+    path("alertas/", alerts.AlertListView.as_view(), name="alert_list"),
+    path("alertas/nueva/", alerts.AlertCreateView.as_view(), name="alert_create"),
+    path("alertas/<int:pk>/", alerts.AlertDetailView.as_view(), name="alert_detail"),
+    path("alertas/<int:pk>/editar/", alerts.AlertUpdateView.as_view(), name="alert_update"),
 ]

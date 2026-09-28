@@ -1,0 +1,33 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ alert.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-0"><span class="badge fs-6 align-middle" style="background:{{ alert.severity.color }}">{{ alert.severity.name }}</span> {{ alert.title }}</h1>
+        <p class="text-secondary mb-0"><a href="{% url 'monitoring:zone_detail' alert.zone.pk %}">{{ alert.zone.name }}</a> · {{ alert.zone.organization.name }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'monitoring:alert_list' %}" class="btn btn-outline-secondary">← Volver</a>
+        {% if perms.monitoring.change_alert %}
+        <a href="{% url 'monitoring:alert_update' alert.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <dl class="row mb-0">
+            <dt class="col-sm-4">Estado</dt><dd class="col-sm-8">{{ alert.get_status_display }}</dd>
+            <dt class="col-sm-4">Dispositivo</dt>
+            <dd class="col-sm-8">{% if alert.device %}<a href="{% url 'monitoring:device_detail' alert.device.pk %}">{{ alert.device.name }}</a>{% else %}-{% endif %}</dd>
+            <dt class="col-sm-4">Lectura que la originó</dt>
+            <dd class="col-sm-8">{% if alert.reading and not alert.reading.is_deleted %}<a href="{% url 'monitoring:reading_detail' alert.reading.pk %}">{{ alert.reading.consumption_kwh }} kWh · {{ alert.reading.reading_at|date:"d-m-Y H:i" }}</a>{% else %}-{% endif %}</dd>
+            <dt class="col-sm-4">Detectada el</dt><dd class="col-sm-8">{{ alert.detected_at|date:"d-m-Y H:i" }}</dd>
+            <dt class="col-sm-4">Resuelta el</dt><dd class="col-sm-8">{{ alert.resolved_at|date:"d-m-Y H:i"|default:"-" }}</dd>
+            <dt class="col-sm-4">Descripción</dt><dd class="col-sm-8">{{ alert.description|default:"-"|linebreaksbr }}</dd>
+        </dl>
+    </div>
+</div>
+{% endblock %}

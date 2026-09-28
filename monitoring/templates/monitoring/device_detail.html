@@ -1,0 +1,89 @@
+{% extends "core/base.html" %}
+
+{% block title %}{{ device.name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <div>
+        <h1 class="h3 mb-0">{{ device.name }}</h1>
+        <p class="text-secondary mb-0">{{ device.serial_number }} · <a href="{% url 'monitoring:zone_detail' device.zone.pk %}">{{ device.zone.name }}</a> · {{ device.zone.organization.name }}</p>
+    </div>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'monitoring:device_list' %}" class="btn btn-outline-secondary">← Volver</a>
+        {% if perms.monitoring.add_consumptionreading and device.is_active %}
+        <a href="{% url 'monitoring:reading_create' %}?device={{ device.pk }}" class="btn btn-outline-success"><i class="bi bi-plus-lg"></i> Registrar lectura</a>
+        {% endif %}
+        {% if perms.monitoring.change_device %}
+        <a href="{% url 'monitoring:device_update' device.pk %}" class="btn btn-primary"><i class="bi bi-pencil"></i> Editar</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body text-center">
+                {% if device.image %}
+                <img src="{{ device.image.url }}" alt="Imagen de {{ device.name }}" class="device-image">
+                {% else %}
+                <div class="py-5 text-secondary"><i class="bi bi-image display-4"></i><div>Sin imagen</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-8">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Categoría</dt><dd class="col-sm-8">{{ device.category.name }}</dd>
+                    <dt class="col-sm-4">Fabricante</dt><dd class="col-sm-8">{{ device.manufacturer.name }}</dd>
+                    <dt class="col-sm-4">Consumo nominal</dt><dd class="col-sm-8">{{ device.nominal_consumption_kwh }} kWh</dd>
+                    <dt class="col-sm-4">Consumo últimos {{ window_days }} días</dt><dd class="col-sm-8">{{ device.consumption_kwh }} kWh</dd>
+                    <dt class="col-sm-4">Lecturas registradas</dt><dd class="col-sm-8">{{ device.reading_count }}</dd>
+                    <dt class="col-sm-4">Instalado el</dt><dd class="col-sm-8">{{ device.installed_on|date:"d-m-Y" }}</dd>
+                    <dt class="col-sm-4">Activo</dt><dd class="col-sm-8">{% if device.is_active %}Sí{% else %}No{% endif %}</dd>
+                    <dt class="col-sm-4">Última actualización</dt><dd class="col-sm-8">{{ device.updated_at|date:"d-m-Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-7">
+        <h2 class="h5 mb-3">Últimas lecturas</h2>
+        <div class="card shadow-sm">
+            <table class="table table-sm mb-0">
+                <thead class="table-light"><tr><th>Fecha</th><th class="text-end">Consumo</th><th></th></tr></thead>
+                <tbody>
+                {% for reading in recent_readings %}
+                <tr>
+                    <td>{{ reading.reading_at|date:"d-m-Y H:i" }}</td>
+                    <td class="text-end {% if reading.consumption_kwh > device.nominal_consumption_kwh %}text-danger{% endif %}">{{ reading.consumption_kwh }} kWh</td>
+                    <td class="text-end"><a href="{% url 'monitoring:reading_detail' reading.pk %}" class="small">Ver</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="3" class="text-center text-secondary py-3">Sin lecturas.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <h2 class="h5 mb-3">Alertas recientes</h2>
+        <div class="card shadow-sm">
+            <ul class="list-group list-group-flush">
+            {% for alert in recent_alerts %}
+                <li class="list-group-item">
+                    <span class="badge" style="background:{{ alert.severity.color }}">{{ alert.severity.name }}</span>
+                    <a href="{% url 'monitoring:alert_detail' alert.pk %}">{{ alert.title }}</a>
+                    <div class="small text-secondary">{{ alert.detected_at|date:"d-m-Y H:i" }} · {{ alert.get_status_display }}</div>
+                </li>
+            {% empty %}
+                <li class="list-group-item text-secondary">Sin alertas.</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

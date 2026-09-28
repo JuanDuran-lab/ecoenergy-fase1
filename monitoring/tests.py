@@ -374,3 +374,242 @@ class ViewPermissionAndScopingTests(EcoEnergyBaseTest):
         stats = {stat["label"]: stat["value"] for stat in response.context["stats"]}
         self.assertEqual(stats["Zonas"], 1)
         self.assertEqual(stats["Dispositivos"], 1)
+
+
+def make_image_file(name="foto.png", image_format="PNG", size=(40, 40)):
+    from io import BytesIO
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image
+
+    buffer = BytesIO()
+    Image.new("RGB", size, (20, 120, 60)).save(buffer, format=image_format)
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type=f"image/{image_format.lower()}")
+
+
+class CrudTests(EcoEnergyBaseTest):
+    def setUp(self):
+        super().setUp()
+        import shutil
+        import tempfile
+
+        from django.test import override_settings
+
+        self.media_dir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, self.media_dir, ignore_errors=True)
+        media_override = override_settings(MEDIA_ROOT=self.media_dir)
+        media_override.enable()
+        self.addCleanup(media_override.disable)
+
+        self.operator_north.user_permissions.add(
+            *Permission.objects.filter(
+                content_type__app_label="monitoring",
+                codename__in=[
+                    "view_consumptionreading",
+                    "add_consumptionreading",
+                    "change_consumptionreading",
+                    "view_alert",
+                    "add_alert",
+                    "change_alert",
+                ],
+            )
+        )
+        self.reader = User.objects.create_user("lector", password=TEST_PASSWORD)
+        UserProfile.objects.create(user=self.reader, organization=self.org_north)
+        self.reader.user_permissions.set(
+            Permission.objects.filter(
+                content_type__app_label="monitoring", codename__in=["view_zone", "view_device"]
+            )
+        )
+        self.client.login(username="operador_norte", password=TEST_PASSWORD)
+
+    def zone_data(self, **overrides):
+        data = {
+            "name": "Bodega nueva",
+            "zone_type": self.zone_type.pk,
+            "status": self.zone_status.pk,
+            "consumption_limit_kwh": "250.00",
+            "description": "",
+        }
+        data.update(overrides)
+        return data
+
+    def device_data(self, **overrides):
+        data = {
+            "zone": self.zone_north.pk,
+            "name": "Compresor 01",
+            "serial_number": "ee-76-99999",
+            "category": self.category.pk,
+            "manufacturer": self.manufacturer.pk,
+            "nominal_consumption_kwh": "40.00",
+            "installed_on": "2025-06-01",
+            "is_active": "on",
+        }
+        data.update(overrides)
+        return data
+
+    # Zonas ---------------------------------------------------------------
+
+    def test_create_zone_assigns_user_organization(self):
+        response = self.client.post(reverse("monitoring:zone_create"), self.zone_data())
+        zone = Zone.objects.get(name="Bodega nueva")
+        self.assertRedirects(response, zone.get_absolute_url())
+        self.assertEqual(zone.organization, self.org_north)
+
+    def test_create_zone_rejects_duplicate_name_case_insensitive(self):
+        response = self.client.post(
+            reverse("monitoring:zone_create"), self.zone_data(name="recepción norte")
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ya existe una zona con este nombre")
+
+    def test_create_zone_rejects_zero_limit(self):
+        response = self.client.post(
+            reverse("monitoring:zone_create"), self.zone_data(consumption_limit_kwh="0")
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Zone.objects.filter(name="Bodega nueva").exists())
+
+    def test_update_zone(self):
+        response = self.client.post(
+            reverse("monitoring:zone_update", args=[self.zone_north.pk]),
+            self.zone_data(name="Recepción renovada"),
+        )
+        self.assertEqual(response.status_code, 302)
+        self.zone_north.refresh_from_db()
+        self.assertEqual(self.zone_north.name, "Recepción renovada")
+
+    def test_cannot_update_other_organization_zone(self):
+        response = self.client.post(
+            reverse("monitoring:zone_update", args=[self.zone_south.pk]), self.zone_data()
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_reader_cannot_create_zone(self):
+        self.client.login(username="lector", password=TEST_PASSWORD)
+        response = self.client.get(reverse("monitoring:zone_create"))
+        self.assertEqual(response.status_code, 403)
+
+    # Dispositivos + imagen -----------------------------------------------
+
+    def test_create_device_with_valid_image(self):
+        data = self.device_data()
+        data["image"] = make_image_file()
+        response = self.client.post(reverse("monitoring:device_create"), data)
+        device = Device.objects.get(serial_number="EE-76-99999")
+        self.assertRedirects(response, device.get_absolute_url())
+        self.assertTrue(device.image.name.startswith("devices/"))
+
+    def test_rejects_fake_image_content(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        data = self.device_data()
+        data["image"] = SimpleUploadedFile("virus.png", b"esto no es una imagen", "image/png")
+        response = self.client.post(reverse("monitoring:device_create"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Device.objects.filter(serial_number="EE-76-99999").exists())
+
+    def test_rejects_disallowed_extension(self):
+        data = self.device_data()
+        data["image"] = make_image_file(name="foto.gif", image_format="GIF")
+        response = self.client.post(reverse("monitoring:device_create"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Device.objects.filter(serial_number="EE-76-99999").exists())
+
+    def test_rejects_image_over_size_limit(self):
+        from unittest import mock
+
+        data = self.device_data()
+        data["image"] = make_image_file()
+        with mock.patch("monitoring.validators.MAX_IMAGE_SIZE", 10):
+            response = self.client.post(reverse("monitoring:device_create"), data)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "El máximo permitido")
+
+    def test_rejects_duplicate_serial_number(self):
+        response = self.client.post(
+            reverse("monitoring:device_create"), self.device_data(serial_number="SN-0002")
+        )
+        self.assertContains(response, "Ya existe un dispositivo con este número de serie")
+
+    def test_cannot_create_device_in_other_organization_zone(self):
+        response = self.client.post(
+            reverse("monitoring:device_create"), self.device_data(zone=self.zone_south.pk)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Device.objects.filter(serial_number="EE-76-99999").exists())
+
+    # Lecturas --------------------------------------------------------------
+
+    def reading_data(self, **overrides):
+        data = {
+            "device": self.device_north.pk,
+            "reading_at": (timezone.localtime() - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M"),
+            "consumption_kwh": "40.00",
+            "notes": "",
+        }
+        data.update(overrides)
+        return data
+
+    def test_create_reading(self):
+        response = self.client.post(reverse("monitoring:reading_create"), self.reading_data())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(ConsumptionReading.objects.count(), 1)
+
+    def test_reading_rejects_anomalous_value(self):
+        response = self.client.post(
+            reverse("monitoring:reading_create"), self.reading_data(consumption_kwh="500.00")
+        )
+        self.assertContains(response, "Valor anómalo")
+
+    def test_reading_rejects_duplicate_datetime(self):
+        self.client.post(reverse("monitoring:reading_create"), self.reading_data())
+        response = self.client.post(reverse("monitoring:reading_create"), self.reading_data())
+        self.assertContains(response, "Ya existe una lectura de este dispositivo")
+
+    def test_reading_rejects_other_organization_device(self):
+        response = self.client.post(
+            reverse("monitoring:reading_create"), self.reading_data(device=self.device_south.pk)
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ConsumptionReading.objects.count(), 0)
+
+    # Alertas ---------------------------------------------------------------
+
+    def alert_data(self, **overrides):
+        data = {
+            "zone": self.zone_north.pk,
+            "device": self.device_north.pk,
+            "severity": self.severity.pk,
+            "title": "Consumo elevado",
+            "status": "open",
+            "detected_at": (timezone.localtime() - timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M"),
+            "resolved_at": "",
+            "description": "",
+        }
+        data.update(overrides)
+        return data
+
+    def test_create_alert(self):
+        response = self.client.post(reverse("monitoring:alert_create"), self.alert_data())
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Alert.objects.count(), 1)
+
+    def test_alert_resolved_requires_date(self):
+        response = self.client.post(
+            reverse("monitoring:alert_create"), self.alert_data(status="resolved")
+        )
+        self.assertContains(response, "debe indicar la fecha de resolución")
+
+    def test_alert_rejects_device_from_other_zone(self):
+        other_zone = Zone.objects.create(
+            organization=self.org_north,
+            zone_type=self.zone_type,
+            status=self.zone_status,
+            name="Bodega Norte",
+            consumption_limit_kwh=Decimal("50.00"),
+        )
+        response = self.client.post(
+            reverse("monitoring:alert_create"), self.alert_data(zone=other_zone.pk)
+        )
+        self.assertContains(response, "no pertenece a la zona")

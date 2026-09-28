@@ -1,0 +1,52 @@
+{% extends "core/base.html" %}
+
+{% block title %}{% if object %}Editar{% else %}Registrar{% endif %} {{ model_verbose_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-0">{% if object %}Editar{% else %}Registrar{% endif %} {{ model_verbose_name }}</h1>
+        {% if object %}<p class="text-secondary mb-0">{{ object }}</p>{% endif %}
+    </div>
+    <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <form method="post" {% if form.is_multipart %}enctype="multipart/form-data"{% endif %} novalidate>
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+            {% endif %}
+
+            <div class="row g-3">
+                {% for field in form %}
+                <div class="{% if field.name == 'description' or field.name == 'notes' or field.name == 'image' %}col-12{% else %}col-md-6{% endif %}">
+                    {% if field.widget_type == "checkbox" %}
+                    <div class="form-check mt-md-4">
+                        {{ field }}
+                        <label class="form-check-label" for="{{ field.id_for_label }}">{{ field.label|capfirst }}</label>
+                    </div>
+                    {% else %}
+                    <label class="form-label" for="{{ field.id_for_label }}">
+                        {{ field.label|capfirst }}{% if field.field.required %} <span class="text-danger">*</span>{% endif %}
+                    </label>
+                    {% if field.name == "image" and form.instance.image %}
+                    <div class="mb-2"><img src="{{ form.instance.image.url }}" alt="Imagen actual" class="device-thumb"></div>
+                    {% endif %}
+                    {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                    {% for error in field.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button type="submit" class="btn btn-success"><i class="bi bi-check-lg"></i> Guardar</button>
+                <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

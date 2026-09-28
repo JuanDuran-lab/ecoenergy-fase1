@@ -1,0 +1,4 @@
+<a href="{% url view_url obj.pk %}" class="btn btn-sm btn-outline-secondary" title="Ver"><i class="bi bi-eye"></i></a>
+{% if can_change %}
+<a href="{% url edit_url obj.pk %}" class="btn btn-sm btn-outline-primary" title="Editar"><i class="bi bi-pencil"></i></a>
+{% endif %}
