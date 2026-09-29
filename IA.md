@@ -1,4 +1,6 @@
-Registro de uso de IA — EcoEnergy Fase 1
+Registro de uso de IA — EcoEnergy
+
+# Parte A — Fase 1
 
 1\. Herramienta utilizada
 
@@ -200,3 +202,67 @@ La IA fue utilizada como herramienta de apoyo para aprendizaje, análisis, revis
 
 El estudiante revisó, adaptó, integró y probó las propuestas utilizadas en el proyecto y debe ser capaz de explicar el funcionamiento de la solución presentada.
 
+
+
+# Parte B — Evaluación Unidad II (integración Django)
+
+## 1. Herramienta utilizada
+
+Se utilizó **Claude (Anthropic)** como asistente de programación. En esta
+etapa la IA generó una parte importante del código, dentro de un proceso por
+fases definido y controlado por el estudiante.
+
+## 2. Forma de trabajo por fases
+
+A partir de la pauta se acordó un plan de trabajo por fases. Cada fase se
+desarrolló en su propia rama, se revisó con pruebas y se integró a `main`
+mediante Pull Request antes de pasar a la siguiente:
+
+| Fase | Contenido | Rol del estudiante |
+|---|---|---|
+| 0. Análisis | Comparación de la pauta con la Fase 1 y plan de trabajo | Definió la problemática (EcoEnergy) y aprobó el plan |
+| 1. Estructura y modelo | Apps `core`, `accounts`, `monitoring`; 6 maestras + 4 operacionales; borrado lógico | Revisó y aprobó el diseño del modelo propuesto |
+| 2. Datos y roles | Seed de 1.521 registros, roles Administrador/Supervisor/Lector | Definió que las contraseñas quedaran fuera del repositorio |
+| 3. Seguridad | Login/logout, recuperación con código de 6 dígitos, permisos y scoping | Verificó los flujos con los tres usuarios |
+| 4. Funcionalidades | CRUD, imágenes, paginación en sesión, SweetAlert2, Excel | Probó cada funcionalidad en local |
+| 5. Despliegue | EC2, Gunicorn, Nginx y configuración de producción | Creó y configuró la instancia y realizó el despliegue |
+
+## 3. Qué aportó la IA
+
+- Propuesta del plan por fases y del diseño del modelo de datos.
+- Generación del código de las fases 1 a 4, de las 83 pruebas automatizadas y
+  del comando `seed_data`.
+- Redacción del README, de la guía `docs/DEPLOY_AWS.md` y de los archivos de
+  configuración de Gunicorn y Nginx.
+- Guía paso a paso y diagnóstico de errores durante el despliegue.
+- Integración de los Pull Requests a `main`, en el orden acordado y por
+  indicación del estudiante.
+
+## 4. Qué realizó el estudiante
+
+- Definición del alcance y aprobación de cada fase antes de avanzar.
+- Conexión del repositorio y autorización de los Pull Requests.
+- Actualización del repositorio local, limpieza de archivos que no
+  correspondían al proyecto (con apoyo de Claude Code) y resguardo de secretos
+  fuera de Git.
+- Instalación, migraciones, carga de datos y pruebas en su computador.
+- Verificación manual con los tres usuarios: permisos, scoping, carga de
+  imágenes, paginación, borrado lógico con SweetAlert2, Excel y recuperación
+  de contraseña.
+- Creación de la instancia EC2 y su grupo de seguridad, configuración del
+  `.env` de producción, despliegue con Gunicorn y Nginx, y resolución de los
+  problemas encontrados (llave SSH, hosts permitidos, contraseñas de prueba).
+
+## 5. Verificación de la solución
+
+El código generado no se aceptó sin comprobación: las 83 pruebas automatizadas
+pasan, y cada funcionalidad se probó manualmente en local y en la URL pública
+de AWS.
+
+## 6. Declaración
+
+La IA fue utilizada como herramienta de apoyo para diseñar, programar,
+documentar y desplegar la solución, dentro de un proceso por fases dirigido y
+verificado por el estudiante. El estudiante revisó, ejecutó y probó el
+resultado, y debe ser capaz de explicar el funcionamiento de cada parte del
+código presentado.
