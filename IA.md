@@ -1,4 +1,6 @@
-Registro de uso de IA — EcoEnergy Fase 1
+Registro de uso de IA — EcoEnergy
+
+# Parte A — Fase 1
 
 1\. Herramienta utilizada
 
@@ -200,3 +202,60 @@ La IA fue utilizada como herramienta de apoyo para aprendizaje, análisis, revis
 
 El estudiante revisó, adaptó, integró y probó las propuestas utilizadas en el proyecto y debe ser capaz de explicar el funcionamiento de la solución presentada.
 
+
+
+# Parte B — Evaluación Unidad II (integración Django)
+
+## 1. Herramienta utilizada
+
+Se utilizó **Claude (Anthropic)** como asistente de programación durante la
+Evaluación Unidad II. A diferencia de la Fase 1, en esta etapa la IA generó una
+parte importante del código, siguiendo un plan acordado con el estudiante y
+trabajando por ramas con Pull Requests en el repositorio.
+
+## 2. Uso de la IA
+
+La IA se utilizó para:
+
+- Analizar la pauta y comparar lo pedido con lo existente en la Fase 1.
+- Proponer el plan de trabajo por fases y el diseño del modelo de datos
+  (6 tablas maestras y 4 operacionales), que el estudiante revisó y aprobó.
+- Generar el código de las apps `core`, `accounts` y `monitoring`: modelos con
+  borrado lógico, scoping por organización, permisos, CRUD con ModelForm,
+  validaciones, carga de imágenes, paginación en sesión, eliminación con
+  SweetAlert2, recuperación de contraseña con código de 6 dígitos y
+  exportación a Excel con openpyxl.
+- Generar el comando `seed_data` de 1.521 registros y las pruebas automatizadas.
+- Redactar el README, la guía de despliegue (`docs/DEPLOY_AWS.md`) y los
+  archivos de configuración de Gunicorn y Nginx.
+- Guiar paso a paso el despliegue en AWS Academy y el diagnóstico de errores.
+
+## 3. Trabajo realizado por el estudiante
+
+- Definición del alcance a partir de la pauta y aprobación del diseño propuesto.
+- Autorización de los Pull Requests; por indicación del estudiante, la
+  integración a `main` la ejecutó el asistente, en el orden acordado.
+- Instalación y ejecución del proyecto en su computador (migraciones, seed,
+  pruebas) y verificación manual con los tres usuarios de prueba.
+- Creación y configuración de la instancia EC2, del grupo de seguridad y del
+  archivo `.env` de producción.
+- Despliegue con Gunicorn y Nginx, y pruebas sobre la URL pública.
+- Organización del repositorio local (con apoyo de Claude Code) y resguardo
+  de secretos fuera de Git.
+
+## 4. Verificación de la solución
+
+El código generado no se aceptó sin comprobación:
+
+- 83 pruebas automatizadas (`python manage.py test`) en verde.
+- Pruebas manuales en local y en AWS: login y logout, recuperación de
+  contraseña, restricciones del lector, scoping entre organizaciones, carga y
+  validación de imágenes, paginación 5/15/30, borrado lógico con SweetAlert2 y
+  descarga del Excel.
+
+## 5. Declaración
+
+La IA fue utilizada como herramienta de apoyo para diseñar, programar,
+documentar y desplegar la solución. El estudiante revisó, ejecutó y probó el
+resultado, y debe ser capaz de explicar el funcionamiento de cada parte del
+código presentado.

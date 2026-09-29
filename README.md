@@ -9,8 +9,14 @@ Proyecto de la **Evaluación Unidad II – Programación Back End (INACAP)**.
 | Evidencia | Valor |
 |---|---|
 | Repositorio | https://github.com/JuanDuran-lab/ecoenergy-fase1 |
-| Último commit integrado | *(completar con `git rev-parse --short HEAD` en `main`)* |
-| Despliegue AWS Academy | *(completar con `http://<IP_PUBLICA>/`)* |
+| Despliegue AWS Academy | http://54.83.105.236/ |
+| Último commit integrado | Último merge en `main` (`git rev-parse --short HEAD`); el hash se informa en la entrega |
+| Usuarios de prueba | `admin_demo`, `supervisor_norte`, `lector_sur` (contraseñas entregadas al docente, no publicadas) |
+
+> La instancia EC2 corre en el AWS Academy Learner Lab: si el laboratorio se
+> reinicia, la IP pública puede cambiar. En ese caso se actualiza esta tabla y
+> las variables `DJANGO_ALLOWED_HOSTS` / `DJANGO_CSRF_TRUSTED_ORIGINS` del
+> servidor (ver [`docs/DEPLOY_AWS.md`](docs/DEPLOY_AWS.md)).
 
 ---
 
