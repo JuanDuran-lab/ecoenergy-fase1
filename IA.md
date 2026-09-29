@@ -208,54 +208,61 @@ El estudiante revisó, adaptó, integró y probó las propuestas utilizadas en e
 
 ## 1. Herramienta utilizada
 
-Se utilizó **Claude (Anthropic)** como asistente de programación durante la
-Evaluación Unidad II. A diferencia de la Fase 1, en esta etapa la IA generó una
-parte importante del código, siguiendo un plan acordado con el estudiante y
-trabajando por ramas con Pull Requests en el repositorio.
+Se utilizó **Claude (Anthropic)** como asistente de programación. En esta
+etapa la IA generó una parte importante del código, dentro de un proceso por
+fases definido y controlado por el estudiante.
 
-## 2. Uso de la IA
+## 2. Forma de trabajo por fases
 
-La IA se utilizó para:
+A partir de la pauta se acordó un plan de trabajo por fases. Cada fase se
+desarrolló en su propia rama, se revisó con pruebas y se integró a `main`
+mediante Pull Request antes de pasar a la siguiente:
 
-- Analizar la pauta y comparar lo pedido con lo existente en la Fase 1.
-- Proponer el plan de trabajo por fases y el diseño del modelo de datos
-  (6 tablas maestras y 4 operacionales), que el estudiante revisó y aprobó.
-- Generar el código de las apps `core`, `accounts` y `monitoring`: modelos con
-  borrado lógico, scoping por organización, permisos, CRUD con ModelForm,
-  validaciones, carga de imágenes, paginación en sesión, eliminación con
-  SweetAlert2, recuperación de contraseña con código de 6 dígitos y
-  exportación a Excel con openpyxl.
-- Generar el comando `seed_data` de 1.521 registros y las pruebas automatizadas.
-- Redactar el README, la guía de despliegue (`docs/DEPLOY_AWS.md`) y los
-  archivos de configuración de Gunicorn y Nginx.
-- Guiar paso a paso el despliegue en AWS Academy y el diagnóstico de errores.
+| Fase | Contenido | Rol del estudiante |
+|---|---|---|
+| 0. Análisis | Comparación de la pauta con la Fase 1 y plan de trabajo | Definió la problemática (EcoEnergy) y aprobó el plan |
+| 1. Estructura y modelo | Apps `core`, `accounts`, `monitoring`; 6 maestras + 4 operacionales; borrado lógico | Revisó y aprobó el diseño del modelo propuesto |
+| 2. Datos y roles | Seed de 1.521 registros, roles Administrador/Supervisor/Lector | Definió que las contraseñas quedaran fuera del repositorio |
+| 3. Seguridad | Login/logout, recuperación con código de 6 dígitos, permisos y scoping | Verificó los flujos con los tres usuarios |
+| 4. Funcionalidades | CRUD, imágenes, paginación en sesión, SweetAlert2, Excel | Probó cada funcionalidad en local |
+| 5. Despliegue | EC2, Gunicorn, Nginx y configuración de producción | Creó y configuró la instancia y realizó el despliegue |
 
-## 3. Trabajo realizado por el estudiante
+## 3. Qué aportó la IA
 
-- Definición del alcance a partir de la pauta y aprobación del diseño propuesto.
-- Autorización de los Pull Requests; por indicación del estudiante, la
-  integración a `main` la ejecutó el asistente, en el orden acordado.
-- Instalación y ejecución del proyecto en su computador (migraciones, seed,
-  pruebas) y verificación manual con los tres usuarios de prueba.
-- Creación y configuración de la instancia EC2, del grupo de seguridad y del
-  archivo `.env` de producción.
-- Despliegue con Gunicorn y Nginx, y pruebas sobre la URL pública.
-- Organización del repositorio local (con apoyo de Claude Code) y resguardo
-  de secretos fuera de Git.
+- Propuesta del plan por fases y del diseño del modelo de datos.
+- Generación del código de las fases 1 a 4, de las 83 pruebas automatizadas y
+  del comando `seed_data`.
+- Redacción del README, de la guía `docs/DEPLOY_AWS.md` y de los archivos de
+  configuración de Gunicorn y Nginx.
+- Guía paso a paso y diagnóstico de errores durante el despliegue.
+- Integración de los Pull Requests a `main`, en el orden acordado y por
+  indicación del estudiante.
 
-## 4. Verificación de la solución
+## 4. Qué realizó el estudiante
 
-El código generado no se aceptó sin comprobación:
+- Definición del alcance y aprobación de cada fase antes de avanzar.
+- Conexión del repositorio y autorización de los Pull Requests.
+- Actualización del repositorio local, limpieza de archivos que no
+  correspondían al proyecto (con apoyo de Claude Code) y resguardo de secretos
+  fuera de Git.
+- Instalación, migraciones, carga de datos y pruebas en su computador.
+- Verificación manual con los tres usuarios: permisos, scoping, carga de
+  imágenes, paginación, borrado lógico con SweetAlert2, Excel y recuperación
+  de contraseña.
+- Creación de la instancia EC2 y su grupo de seguridad, configuración del
+  `.env` de producción, despliegue con Gunicorn y Nginx, y resolución de los
+  problemas encontrados (llave SSH, hosts permitidos, contraseñas de prueba).
 
-- 83 pruebas automatizadas (`python manage.py test`) en verde.
-- Pruebas manuales en local y en AWS: login y logout, recuperación de
-  contraseña, restricciones del lector, scoping entre organizaciones, carga y
-  validación de imágenes, paginación 5/15/30, borrado lógico con SweetAlert2 y
-  descarga del Excel.
+## 5. Verificación de la solución
 
-## 5. Declaración
+El código generado no se aceptó sin comprobación: las 83 pruebas automatizadas
+pasan, y cada funcionalidad se probó manualmente en local y en la URL pública
+de AWS.
+
+## 6. Declaración
 
 La IA fue utilizada como herramienta de apoyo para diseñar, programar,
-documentar y desplegar la solución. El estudiante revisó, ejecutó y probó el
+documentar y desplegar la solución, dentro de un proceso por fases dirigido y
+verificado por el estudiante. El estudiante revisó, ejecutó y probó el
 resultado, y debe ser capaz de explicar el funcionamiento de cada parte del
 código presentado.
