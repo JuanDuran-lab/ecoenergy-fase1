@@ -9,7 +9,7 @@ Proyecto de la **Evaluación Unidad II – Programación Back End (INACAP)**.
 | Evidencia | Valor |
 |---|---|
 | Repositorio | https://github.com/JuanDuran-lab/ecoenergy-fase1 |
-| Despliegue AWS Academy | http://54.83.105.236/ |
+| Despliegue AWS Academy | http://13.218.34.129/ |
 | Último commit integrado | Último merge en `main` (`git rev-parse --short HEAD`); el hash se informa en la entrega |
 | Usuarios de prueba | `admin_demo`, `supervisor_norte`, `lector_sur` (contraseñas entregadas al docente, no publicadas) |
 
