@@ -8,13 +8,6 @@ from django.utils import timezone
 
 
 class UserProfile(models.Model):
-    """
-    Datos adicionales del usuario de Django.
-
-    organization define el ámbito (scoping) de datos del usuario. Un
-    superusuario puede no tener organización porque ve todo.
-    """
-
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         verbose_name="usuario",
@@ -41,16 +34,6 @@ class UserProfile(models.Model):
 
 
 class PasswordResetCode(models.Model):
-    """
-    Código numérico de 6 dígitos para recuperar la contraseña.
-
-    - El código nunca se guarda en texto plano: se almacena su hash con
-      el mismo algoritmo que usa Django para las contraseñas.
-    - Expira a los EXPIRATION_MINUTES minutos.
-    - Se bloquea después de MAX_ATTEMPTS intentos fallidos.
-    - Al usarse con éxito se marca used_at y no puede reutilizarse.
-    """
-
     CODE_LENGTH = 6
     EXPIRATION_MINUTES = 10
     MAX_ATTEMPTS = 5
@@ -78,11 +61,6 @@ class PasswordResetCode(models.Model):
 
     @classmethod
     def issue_for(cls, user):
-        """
-        Invalida los códigos pendientes del usuario y genera uno nuevo.
-        Retorna (instancia, código_en_texto_plano). El texto plano solo
-        existe en memoria para enviarlo por correo.
-        """
         now = timezone.now()
         cls.objects.filter(user=user, used_at__isnull=True, expires_at__gt=now).update(
             expires_at=now
@@ -117,7 +95,6 @@ class PasswordResetCode(models.Model):
         )
 
     def verify(self, raw_code):
-        """Compara el código ingresado con el hash. Cuenta los fallos."""
         if not self.is_usable:
             return False
         if check_password(raw_code, self.code_hash):

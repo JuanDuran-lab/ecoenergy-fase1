@@ -1,11 +1,3 @@
-/*
- * Confirmación de eliminación con SweetAlert2.
- *
- * Todos los formularios con la clase "js-confirm-delete" se interceptan:
- * se muestra el diálogo y, solo si el usuario confirma, se envía el POST
- * (que incluye el token CSRF). La validación real de autenticación,
- * permiso y organización ocurre en el servidor (ScopedSoftDeleteView).
- */
 document.addEventListener("submit", function (event) {
     const form = event.target;
     if (!form.classList.contains("js-confirm-delete") || form.dataset.confirmed === "true") {

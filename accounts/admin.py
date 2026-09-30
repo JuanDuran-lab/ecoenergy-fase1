@@ -59,8 +59,6 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(PasswordResetCode)
 class PasswordResetCodeAdmin(admin.ModelAdmin):
-    """Solo lectura: permite auditar que el código se guarda hasheado."""
-
     list_display = ("user", "created_at", "expires_at", "used_at", "attempts")
     list_filter = ("used_at",)
     search_fields = ("user__username", "user__email")

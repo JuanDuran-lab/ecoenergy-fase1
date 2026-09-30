@@ -1,11 +1,3 @@
-"""
-Vistas base reutilizables para los CRUD.
-
-Cada CRUD del proyecto hereda de estas clases y solo define el modelo,
-el formulario, las plantillas y sus filtros. Así la seguridad (login,
-permiso y scoping) se aplica siempre de la misma forma.
-"""
-
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
@@ -51,8 +43,6 @@ class ScopedDetailView(ModelPermissionMixin, OrganizationScopedMixin, DetailView
 
 
 class ScopedFormMixin:
-    """Entrega el usuario al formulario y muestra un mensaje de éxito."""
-
     success_message = "Registro guardado correctamente."
     list_url_name = None
 
@@ -102,20 +92,6 @@ class ScopedUpdateView(
 class ScopedSoftDeleteView(
     ModelPermissionMixin, OrganizationScopedMixin, SingleObjectMixin, View
 ):
-    """
-    Eliminación segura con borrado lógico.
-
-    - Solo acepta POST (un GET responde 405), y el POST exige token CSRF
-      gracias a CsrfViewMiddleware.
-    - ModelPermissionMixin exige sesión y el permiso delete_<modelo>.
-    - get_object() usa el QuerySet con scoping: un registro de otra
-      organización (o ya eliminado) responde 404.
-    - Nunca borra la fila: llama a soft_delete(), que registra deleted_at.
-
-    La confirmación con SweetAlert2 es solo una ayuda visual; toda la
-    seguridad está aquí, en el servidor.
-    """
-
     permission_action = "delete"
     http_method_names = ["post"]
     success_url_name = None

@@ -1,11 +1,3 @@
-"""
-Configuración de Django para EcoEnergy.
-
-Todos los valores sensibles o que cambian entre ambientes (local / AWS)
-se leen desde variables de entorno, cargadas desde el archivo .env.
-Ver .env.example para la lista completa.
-"""
-
 import os
 import sys
 from pathlib import Path
@@ -24,10 +16,6 @@ def env_list(name, default=""):
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 
 
-# ---------------------------------------------------------------------------
-# Seguridad
-# ---------------------------------------------------------------------------
-
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-clave-solo-desarrollo")
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
@@ -37,10 +25,6 @@ ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 
-# ---------------------------------------------------------------------------
-# Aplicaciones
-# ---------------------------------------------------------------------------
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -48,7 +32,6 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # Apps del proyecto
     "core",
     "accounts",
     "monitoring",
@@ -84,11 +67,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "ecoenergy.wsgi.application"
 
 
-# ---------------------------------------------------------------------------
-# Base de datos
-# DB_ENGINE=sqlite (por defecto) o DB_ENGINE=postgresql
-# ---------------------------------------------------------------------------
-
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
 
 if DB_ENGINE == "postgresql":
@@ -113,10 +91,6 @@ else:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-# ---------------------------------------------------------------------------
-# Contraseñas
-# ---------------------------------------------------------------------------
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -132,7 +106,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
     {
-        # Mayúscula, minúscula, número y carácter especial.
         "NAME": "accounts.validators.PasswordComplexityValidator",
     },
 ]
@@ -142,19 +115,11 @@ LOGIN_REDIRECT_URL = "monitoring:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
 
-# ---------------------------------------------------------------------------
-# Internacionalización
-# ---------------------------------------------------------------------------
-
 LANGUAGE_CODE = "es-cl"
 TIME_ZONE = "America/Santiago"
 USE_I18N = True
 USE_TZ = True
 
-
-# ---------------------------------------------------------------------------
-# Archivos estáticos y archivos subidos por usuarios
-# ---------------------------------------------------------------------------
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -162,11 +127,6 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT") or BASE_DIR / "media")
 
-
-# ---------------------------------------------------------------------------
-# Correo
-# Sin EMAIL_HOST se usa la consola (el correo se imprime en la terminal).
-# ---------------------------------------------------------------------------
 
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "EcoEnergy <no-reply@ecoenergy.local>")
 
@@ -192,20 +152,14 @@ else:
     }
 
 
-# ---------------------------------------------------------------------------
-# Producción (DJANGO_DEBUG=False)
-# ---------------------------------------------------------------------------
-
-# Tamaño máximo de una petición con archivos (la imagen admite 2 MB).
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_AGE = 60 * 60 * 8  # 8 horas
+SESSION_COOKIE_AGE = 60 * 60 * 8
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 
-# Solo activar si el sitio se sirve con HTTPS (certificado en Nginx).
 USE_HTTPS = env_bool("DJANGO_USE_HTTPS", False)
 SESSION_COOKIE_SECURE = USE_HTTPS
 CSRF_COOKIE_SECURE = USE_HTTPS
@@ -222,10 +176,6 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO" if not DEBUG else "WARNING"},
 }
 
-
-# ---------------------------------------------------------------------------
-# Pruebas automatizadas: hasher rápido SOLO al ejecutar "manage.py test".
-# ---------------------------------------------------------------------------
 
 if len(sys.argv) > 1 and sys.argv[1] == "test":
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]

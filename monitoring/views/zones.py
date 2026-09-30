@@ -61,7 +61,6 @@ class ZoneSummaryView(ScopedListView):
     context_object_name = "zones"
 
     def get_paginate_by(self, queryset):
-        # El resumen muestra todas las zonas en una sola tabla.
         return None
 
     def get_queryset(self):

@@ -1,12 +1,3 @@
-"""
-Filtros de los listados.
-
-Se usan tanto en el listado HTML como en la exportación a Excel, para que
-el archivo descargado contenga exactamente lo que el usuario está viendo.
-El QuerySet que reciben ya viene filtrado por organización (scoping) y sin
-registros eliminados lógicamente.
-"""
-
 from django.db.models import Q
 from django.utils.dateparse import parse_date
 

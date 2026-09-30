@@ -79,17 +79,6 @@ class ReadingDeleteView(ScopedSoftDeleteView):
 
 
 class ReadingExportView(ModelPermissionMixin, View):
-    """
-    Descarga .xlsx de las lecturas.
-
-    Seguridad:
-    - ModelPermissionMixin: sesión + permisos view y export (403 si faltan).
-    - ConsumptionReading.objects excluye los registros eliminados lógicamente.
-    - scope_queryset() limita a la organización del usuario.
-    - filter_readings() aplica los mismos filtros del listado (?q, ?zone,
-      fechas), así el Excel contiene lo que el usuario está viendo.
-    """
-
     model = ConsumptionReading
     permission_required = (
         "monitoring.view_consumptionreading",

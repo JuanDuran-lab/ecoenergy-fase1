@@ -98,7 +98,6 @@ class PasswordResetFlowTests(TestCase):
         code = self.request_code()
         self.confirm(code)
 
-        # Nueva solicitud de "confirmación" con el mismo código ya usado.
         session = self.client.session
         session["password_reset_email"] = "usuario@test.cl"
         session.save()

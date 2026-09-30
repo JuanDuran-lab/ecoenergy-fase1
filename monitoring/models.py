@@ -25,11 +25,6 @@ from .validators import (
 ALIVE = Q(deleted_at__isnull=True)
 
 
-# ---------------------------------------------------------------------------
-# Tablas maestras
-# ---------------------------------------------------------------------------
-
-
 class Organization(SoftDeleteModel):
     name = models.CharField("nombre", max_length=150)
     tax_id = models.CharField("RUT", max_length=12)
@@ -167,11 +162,6 @@ class AlertSeverity(SoftDeleteModel):
         return self.name
 
 
-# ---------------------------------------------------------------------------
-# Tablas operacionales
-# ---------------------------------------------------------------------------
-
-
 class Zone(SoftDeleteModel):
     organization_lookup = "organization"
 
@@ -237,10 +227,6 @@ class Zone(SoftDeleteModel):
             )
 
     def soft_delete(self):
-        """
-        Borrado lógico en cascada: al eliminar una zona también se
-        eliminan (lógicamente) sus dispositivos, lecturas y alertas.
-        """
         ConsumptionReading.objects.filter(device__zone=self).soft_delete()
         Alert.objects.filter(zone=self).soft_delete()
         self.devices.all().soft_delete()
@@ -248,7 +234,6 @@ class Zone(SoftDeleteModel):
 
 
 def device_image_path(instance, filename):
-    """Nombre aleatorio para evitar colisiones y nombres maliciosos."""
     extension = Path(filename).suffix.lower()
     return f"devices/{uuid.uuid4().hex}{extension}"
 
@@ -338,7 +323,6 @@ class Device(SoftDeleteModel):
             )
 
     def soft_delete(self):
-        """Borrado lógico en cascada: lecturas y alertas del dispositivo."""
         self.readings.all().soft_delete()
         self.alerts.all().soft_delete()
         super().soft_delete()
@@ -401,8 +385,6 @@ class ConsumptionReading(SoftDeleteModel):
         if self.reading_at and self.reading_at > timezone.now():
             errors["reading_at"] = "La lectura no puede tener fecha futura."
 
-        # Regla de negocio: no se registran lecturas nuevas en dispositivos
-        # inactivos. Las lecturas históricas sí pueden editarse.
         if self._state.adding and self.device_id and not self.device.is_active:
             errors["device"] = "No se pueden registrar lecturas de un dispositivo inactivo."
 

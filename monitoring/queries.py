@@ -1,11 +1,3 @@
-"""
-Consultas reutilizables del módulo de monitoreo.
-
-Importante: los managers por defecto ocultan los registros eliminados,
-pero las anotaciones (Count/Sum) sobre relaciones hacen JOIN directo a la
-tabla. Por eso aquí se filtra deleted_at explícitamente en cada relación.
-"""
-
 from datetime import timedelta
 from decimal import Decimal
 
@@ -21,7 +13,6 @@ def consumption_since():
 
 
 def annotate_zone_metrics(queryset):
-    """Agrega device_count y consumption_kwh (últimos 30 días) a cada zona."""
     since = consumption_since()
     alive_devices = Q(devices__deleted_at__isnull=True)
     return queryset.annotate(
@@ -40,7 +31,6 @@ def annotate_zone_metrics(queryset):
 
 
 def annotate_device_metrics(queryset):
-    """Agrega consumption_kwh (últimos 30 días) y reading_count a cada dispositivo."""
     since = consumption_since()
     recent = Q(readings__deleted_at__isnull=True) & Q(readings__reading_at__gte=since)
     return queryset.annotate(

@@ -1,12 +1,3 @@
-"""
-Clases base para el Django Admin.
-
-- SoftDeleteAdmin: el Admin nunca elimina físicamente. Eliminar desde el
-  Admin marca deleted_at, y un filtro permite ver/restaurar eliminados.
-- OrganizationScopedAdminMixin: aplica el mismo scoping por organización
-  que las vistas propias (core.scoping).
-"""
-
 from django.contrib import admin, messages
 
 from .scoping import get_user_organization, scope_queryset
@@ -24,8 +15,6 @@ class DeletedStatusFilter(admin.SimpleListFilter):
         )
 
     def choices(self, changelist):
-        # Se oculta la opción "Todo" que agrega Django por defecto,
-        # porque el valor por defecto de este filtro es "Activos".
         for lookup, title in self.lookup_choices:
             yield {
                 "selected": (self.value() or "active") == lookup,
@@ -73,7 +62,6 @@ class SoftDeleteAdmin(admin.ModelAdmin):
     readonly_fields = ("created_at", "updated_at", "deleted_at")
 
     def get_queryset(self, request):
-        # Se usa all_objects para que el filtro "Eliminados" funcione.
         queryset = self.model.all_objects.get_queryset()
         ordering = self.get_ordering(request)
         if ordering:
@@ -85,7 +73,6 @@ class SoftDeleteAdmin(admin.ModelAdmin):
 
     def get_actions(self, request):
         actions = super().get_actions(request)
-        # La acción estándar hace borrado físico: se reemplaza.
         actions.pop("delete_selected", None)
         return actions
 
@@ -96,17 +83,10 @@ class SoftDeleteAdmin(admin.ModelAdmin):
         queryset.delete()
 
     def get_deleted_objects(self, objs, request):
-        # Con borrado lógico no se eliminan objetos relacionados
-        # físicamente, así que la confirmación solo lista el objeto.
         return [str(obj) for obj in objs], {}, set(), []
 
 
 class OrganizationScopedAdminMixin:
-    """
-    Aplica core.scoping al Admin. `scoped_fk_fields` define qué FK del
-    formulario se filtran por organización, por ejemplo {"zone": Zone}.
-    """
-
     scoped_fk_fields = {}
 
     def get_queryset(self, request):
@@ -132,7 +112,6 @@ class OrganizationScopedAdminMixin:
         filters = super().get_list_filter(request)
         if request.user.is_superuser:
             return filters
-        # Un usuario con scoping no necesita filtrar por organización.
         return tuple(
             f for f in filters
             if not (isinstance(f, str) and f.endswith("organization"))

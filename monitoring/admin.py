@@ -21,11 +21,6 @@ admin.site.site_title = "EcoEnergy Admin"
 admin.site.index_title = "Panel de administración EcoEnergy"
 
 
-# ---------------------------------------------------------------------------
-# Tablas maestras
-# ---------------------------------------------------------------------------
-
-
 @admin.register(Organization)
 class OrganizationAdmin(SoftDeleteAdmin):
     list_display = ("name", "tax_id", "is_active")
@@ -78,11 +73,6 @@ class AlertSeverityAdmin(SoftDeleteAdmin):
             obj.color,
             obj.color,
         )
-
-
-# ---------------------------------------------------------------------------
-# Tablas operacionales (con scoping por organización)
-# ---------------------------------------------------------------------------
 
 
 class DeviceInline(admin.TabularInline):

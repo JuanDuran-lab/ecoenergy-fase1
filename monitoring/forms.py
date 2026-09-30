@@ -1,16 +1,3 @@
-"""
-Formularios (ModelForm) de las 4 entidades con CRUD.
-
-Validaciones del lado servidor:
-- Requeridos y rangos: los declara el modelo (blank=False, validators).
-- Duplicados: clean_<campo>() revisa solo registros activos (no eliminados).
-- Reglas de negocio: clean() del formulario y clean() del modelo.
-- Scoping: los <select> de zona/dispositivo solo muestran registros de la
-  organización del usuario. Si alguien manipula el HTML y envía un id de
-  otra organización, el ModelChoiceField lo rechaza por no estar en su
-  queryset.
-"""
-
 from decimal import Decimal
 
 from django import forms
@@ -34,8 +21,6 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M"
 
 
 class BootstrapFormMixin:
-    """Agrega las clases CSS de Bootstrap a todos los widgets."""
-
     def apply_bootstrap(self):
         for field in self.fields.values():
             if isinstance(field, forms.ModelChoiceField):
@@ -51,28 +36,17 @@ class BootstrapFormMixin:
 
 
 class ScopedModelForm(BootstrapFormMixin, forms.ModelForm):
-    """ModelForm que recibe el usuario para aplicar el scoping."""
-
     def __init__(self, *args, user, **kwargs):
         self.user = user
         super().__init__(*args, **kwargs)
         self.apply_bootstrap()
 
     def active_master(self, model, field_name):
-        """
-        Solo ofrece registros maestros activos, pero conserva el valor
-        actual del registro editado aunque haya sido desactivado.
-        """
         queryset = model.objects.filter(is_active=True)
         current = getattr(self.instance, f"{field_name}_id", None)
         if current:
             queryset = model.objects.filter(pk=current) | queryset
         return queryset.distinct()
-
-
-# ---------------------------------------------------------------------------
-# Zonas
-# ---------------------------------------------------------------------------
 
 
 class ZoneForm(ScopedModelForm):
@@ -96,7 +70,6 @@ class ZoneForm(ScopedModelForm):
         if self.user.is_superuser:
             self.fields["organization"].queryset = Organization.objects.filter(is_active=True)
         else:
-            # Un usuario con scoping no elige organización: se usa la suya.
             del self.fields["organization"]
             if not self.instance.pk:
                 self.instance.organization = get_user_organization(self.user)
@@ -120,11 +93,6 @@ class ZoneForm(ScopedModelForm):
             if duplicates.exists():
                 self.add_error("name", "Ya existe una zona con este nombre en la organización.")
         return cleaned_data
-
-
-# ---------------------------------------------------------------------------
-# Dispositivos
-# ---------------------------------------------------------------------------
 
 
 class DeviceForm(ScopedModelForm):
@@ -177,14 +145,7 @@ class DeviceForm(ScopedModelForm):
         return cleaned_data
 
 
-# ---------------------------------------------------------------------------
-# Lecturas de consumo
-# ---------------------------------------------------------------------------
-
-
 class ConsumptionReadingForm(ScopedModelForm):
-    # Regla de negocio: una lectura mayor a 3 veces el consumo nominal se
-    # considera un error de digitación.
     MAX_NOMINAL_FACTOR = Decimal("3")
 
     class Meta:
@@ -227,11 +188,6 @@ class ConsumptionReadingForm(ScopedModelForm):
                     f"({limit:.2f} kWh). Revise la lectura.",
                 )
         return cleaned_data
-
-
-# ---------------------------------------------------------------------------
-# Alertas
-# ---------------------------------------------------------------------------
 
 
 class AlertForm(ScopedModelForm):

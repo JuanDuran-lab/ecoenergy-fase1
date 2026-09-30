@@ -8,8 +8,6 @@ from ..queries import CONSUMPTION_WINDOW_DAYS, annotate_zone_metrics
 
 
 class DashboardView(LoginRequiredMixin, TemplateView):
-    """Resumen de la organización del usuario (o de todas, si es admin)."""
-
     template_name = "monitoring/dashboard.html"
 
     def get_context_data(self, **kwargs):
