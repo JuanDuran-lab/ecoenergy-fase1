@@ -1,13 +1,6 @@
 """
-Paginación con tamaño de página persistente en la sesión.
-
-- El usuario elige 5, 15 o 30 registros por página (?per_page=N).
-- La elección se guarda en request.session y se mantiene al navegar
-  entre páginas y entre listados, incluso después de cerrar el navegador
-  mientras la sesión siga vigente.
-- Cualquier otro valor (0, 1000, "abc", -5) se normaliza al valor por
-  defecto (15) y se informa al usuario. El servidor nunca confía en el
-  valor que llega desde el navegador.
+Paginación de los listados: el usuario elige 5, 15 o 30 registros y la
+elección se guarda en la sesión. Cualquier otro valor se normaliza a 15.
 """
 
 from django.contrib import messages
@@ -39,7 +32,6 @@ def resolve_page_size(request):
 
     value = request.session.get(SESSION_KEY, DEFAULT_PAGE_SIZE)
     if value not in PAGE_SIZE_OPTIONS:
-        # La sesión también se valida (defensa en profundidad).
         value = DEFAULT_PAGE_SIZE
         request.session[SESSION_KEY] = value
     return value
@@ -50,10 +42,6 @@ class SessionPaginationMixin:
         return resolve_page_size(self.request)
 
     def paginate_queryset(self, queryset, page_size):
-        """
-        Igual que ListView, pero una página inexistente (?page=999) muestra
-        la última página válida en vez de responder 404.
-        """
         paginator = self.get_paginator(
             queryset,
             page_size,

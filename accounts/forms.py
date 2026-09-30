@@ -1,3 +1,7 @@
+"""
+Formularios de login y de recuperación de contraseña.
+"""
+
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, SetPasswordForm
 from django.core.validators import RegexValidator
@@ -25,16 +29,6 @@ class PasswordResetRequestForm(forms.Form):
 
 
 class PasswordResetConfirmForm(SetPasswordForm):
-    """
-    Pide el código de 6 dígitos y la nueva contraseña dos veces.
-
-    Hereda de SetPasswordForm de Django, que:
-    - compara new_password1 con new_password2,
-    - ejecuta todos los AUTH_PASSWORD_VALIDATORS (largo mínimo 10,
-      complejidad, contraseñas comunes, etc.),
-    - guarda la contraseña con set_password() (hash, nunca texto plano).
-    """
-
     code = forms.CharField(
         label="Código de verificación",
         min_length=PasswordResetCode.CODE_LENGTH,
@@ -73,6 +67,5 @@ class PasswordResetConfirmForm(SetPasswordForm):
     def save(self, commit=True):
         user = super().save(commit=commit)
         if commit:
-            # El código queda marcado como usado: no puede reutilizarse.
             self.reset_code.mark_used()
         return user

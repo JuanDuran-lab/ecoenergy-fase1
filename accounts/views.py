@@ -1,3 +1,13 @@
+"""
+Login, logout y recuperación de contraseña.
+
+Recuperación en dos pasos:
+1. El usuario ingresa su correo y recibe un código de 6 dígitos. La
+   respuesta es la misma exista o no el correo (no revela usuarios).
+2. Ingresa el código y la nueva contraseña, validada con las mismas
+   reglas de settings.AUTH_PASSWORD_VALIDATORS.
+"""
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
@@ -20,8 +30,6 @@ class EcoLoginView(LoginView):
 
 
 class EcoLogoutView(LogoutView):
-    """LogoutView de Django solo acepta POST (protección CSRF)."""
-
     next_page = reverse_lazy("accounts:login")
 
 
@@ -41,12 +49,6 @@ def send_reset_code_email(user, raw_code):
 
 @require_http_methods(["GET", "POST"])
 def password_reset_request(request):
-    """
-    Paso 1: el usuario ingresa su correo.
-
-    Por seguridad la respuesta es la misma exista o no el correo, para
-    no revelar qué correos están registrados (enumeración de usuarios).
-    """
     form = PasswordResetRequestForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -74,7 +76,6 @@ def password_reset_request(request):
 
 @require_http_methods(["GET", "POST"])
 def password_reset_confirm(request):
-    """Paso 2: el usuario ingresa el código y la nueva contraseña (2 veces)."""
     email = request.session.get(SESSION_RESET_EMAIL)
     if not email:
         messages.warning(request, "Primero ingresa tu correo para recibir un código.")

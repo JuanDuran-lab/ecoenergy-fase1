@@ -1,3 +1,16 @@
+"""
+Modelo de datos de EcoEnergy.
+
+- Tablas maestras: Organization, Category, ZoneType, ZoneStatus,
+  Manufacturer y AlertSeverity.
+- Tablas operacionales: Zone, Device, ConsumptionReading y Alert. Declaran
+  `organization_lookup` para el scoping y validan reglas de negocio en
+  clean().
+
+Las restricciones de unicidad solo consideran registros no eliminados
+(condition=ALIVE), para permitir recrear un registro borrado lógicamente.
+"""
+
 import uuid
 from decimal import Decimal
 from pathlib import Path
@@ -237,10 +250,6 @@ class Zone(SoftDeleteModel):
             )
 
     def soft_delete(self):
-        """
-        Borrado lógico en cascada: al eliminar una zona también se
-        eliminan (lógicamente) sus dispositivos, lecturas y alertas.
-        """
         ConsumptionReading.objects.filter(device__zone=self).soft_delete()
         Alert.objects.filter(zone=self).soft_delete()
         self.devices.all().soft_delete()
@@ -248,7 +257,6 @@ class Zone(SoftDeleteModel):
 
 
 def device_image_path(instance, filename):
-    """Nombre aleatorio para evitar colisiones y nombres maliciosos."""
     extension = Path(filename).suffix.lower()
     return f"devices/{uuid.uuid4().hex}{extension}"
 
@@ -338,7 +346,6 @@ class Device(SoftDeleteModel):
             )
 
     def soft_delete(self):
-        """Borrado lógico en cascada: lecturas y alertas del dispositivo."""
         self.readings.all().soft_delete()
         self.alerts.all().soft_delete()
         super().soft_delete()
@@ -401,8 +408,6 @@ class ConsumptionReading(SoftDeleteModel):
         if self.reading_at and self.reading_at > timezone.now():
             errors["reading_at"] = "La lectura no puede tener fecha futura."
 
-        # Regla de negocio: no se registran lecturas nuevas en dispositivos
-        # inactivos. Las lecturas históricas sí pueden editarse.
         if self._state.adding and self.device_id and not self.device.is_active:
             errors["device"] = "No se pueden registrar lecturas de un dispositivo inactivo."
 

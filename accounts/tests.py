@@ -1,3 +1,8 @@
+"""
+Pruebas de cuentas: política de contraseñas, login/logout y flujo completo
+de recuperación de contraseña.
+"""
+
 import re
 from datetime import timedelta
 
@@ -98,7 +103,6 @@ class PasswordResetFlowTests(TestCase):
         code = self.request_code()
         self.confirm(code)
 
-        # Nueva solicitud de "confirmación" con el mismo código ya usado.
         session = self.client.session
         session["password_reset_email"] = "usuario@test.cl"
         session.save()

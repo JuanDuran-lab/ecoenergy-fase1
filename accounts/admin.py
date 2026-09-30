@@ -1,3 +1,8 @@
+"""
+Admin de usuarios: el perfil (organización) se edita como Inline dentro
+del usuario, y los códigos de recuperación son de solo lectura.
+"""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
@@ -59,8 +64,6 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(PasswordResetCode)
 class PasswordResetCodeAdmin(admin.ModelAdmin):
-    """Solo lectura: permite auditar que el código se guarda hasheado."""
-
     list_display = ("user", "created_at", "expires_at", "used_at", "attempts")
     list_filter = ("used_at",)
     search_fields = ("user__username", "user__email")

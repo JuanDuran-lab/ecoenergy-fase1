@@ -1,14 +1,8 @@
 """
-Exportación de lecturas de consumo a Excel (.xlsx) con openpyxl.
+Exportación de lecturas a Excel (.xlsx) con openpyxl.
 
-Cómo funciona:
-1. La vista entrega un QuerySet YA filtrado por permisos, organización
-   (scoping) y sin registros eliminados lógicamente (manager por defecto).
-2. openpyxl crea un libro (Workbook) en memoria; cada fila del QuerySet se
-   agrega con worksheet.append([...]).
-3. El libro se guarda en un BytesIO y se devuelve como HttpResponse con el
-   content-type de Excel y Content-Disposition: attachment, para que el
-   navegador lo descargue.
+Recibe un QuerySet ya filtrado por permisos, organización y filtros del
+listado; construye el libro en memoria y lo devuelve para su descarga.
 """
 
 from io import BytesIO
@@ -24,7 +18,6 @@ HEADER_FONT = Font(bold=True, color="FFFFFF")
 HEADER_FILL = PatternFill("solid", fgColor="15803D")
 
 READING_COLUMNS = [
-    # (encabezado, ancho, formato numérico)
     ("ID", 8, None),
     ("Fecha y hora", 18, "DD-MM-YYYY HH:MM"),
     ("Organización", 20, None),
@@ -41,7 +34,6 @@ READING_COLUMNS = [
 
 
 def _local_naive(value):
-    """Excel no admite zonas horarias: se exporta la hora local de Chile."""
     return timezone.localtime(value).replace(tzinfo=None)
 
 
@@ -88,7 +80,6 @@ def build_readings_workbook(queryset, *, user, filters_description=""):
     sheet.freeze_panes = "A2"
     sheet.auto_filter.ref = sheet.dimensions
 
-    # Hoja con información de la exportación (trazabilidad).
     info = workbook.create_sheet("Información")
     organization = getattr(getattr(user, "profile", None), "organization", None)
     for label, value in [

@@ -1,3 +1,7 @@
+"""
+CRUD de dispositivos.
+"""
+
 from core.scoping import scope_queryset
 from core.views import (
     ScopedCreateView,

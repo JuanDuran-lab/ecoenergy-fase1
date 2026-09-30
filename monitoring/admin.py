@@ -1,3 +1,14 @@
+"""
+Django Admin de EcoEnergy.
+
+- Tablas maestras y operacionales registradas con list_display,
+  search_fields, list_filter, ordering y list_select_related.
+- Inline: dispositivos (DeviceInline) dentro de la zona.
+- Acciones personalizadas: activar / desactivar dispositivos.
+- Validación: clean() de los modelos, que el Admin ejecuta al guardar.
+- Seguridad: las tablas operacionales aplican scoping por organización.
+"""
+
 from django.contrib import admin
 from django.utils.html import format_html
 

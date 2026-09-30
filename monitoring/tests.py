@@ -1,3 +1,9 @@
+"""
+Pruebas de monitoreo: validaciones de los modelos, borrado lógico, scoping
+en el Admin y en las vistas, permisos por rol, carga de datos (seed_data),
+CRUD y exportación a Excel.
+"""
+
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -123,7 +129,6 @@ class ModelValidationTests(EcoEnergyBaseTest):
         )
         with self.assertRaises(ValidationError):
             zone.full_clean()
-
 
     def test_device_rejects_future_installation_date(self):
         self.device_north.installed_on = timezone.localdate() + timedelta(days=1)
@@ -448,8 +453,6 @@ class CrudTests(EcoEnergyBaseTest):
         data.update(overrides)
         return data
 
-    # Zonas ---------------------------------------------------------------
-
     def test_create_zone_assigns_user_organization(self):
         response = self.client.post(reverse("monitoring:zone_create"), self.zone_data())
         zone = Zone.objects.get(name="Bodega nueva")
@@ -489,8 +492,6 @@ class CrudTests(EcoEnergyBaseTest):
         self.client.login(username="lector", password=TEST_PASSWORD)
         response = self.client.get(reverse("monitoring:zone_create"))
         self.assertEqual(response.status_code, 403)
-
-    # Dispositivos + imagen -----------------------------------------------
 
     def test_create_device_with_valid_image(self):
         data = self.device_data()
@@ -539,8 +540,6 @@ class CrudTests(EcoEnergyBaseTest):
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Device.objects.filter(serial_number="EE-76-99999").exists())
 
-    # Lecturas --------------------------------------------------------------
-
     def reading_data(self, **overrides):
         data = {
             "device": self.device_north.pk,
@@ -573,8 +572,6 @@ class CrudTests(EcoEnergyBaseTest):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(ConsumptionReading.objects.count(), 0)
-
-    # Alertas ---------------------------------------------------------------
 
     def alert_data(self, **overrides):
         data = {
@@ -746,7 +743,7 @@ class ExcelExportTests(EcoEnergyBaseTest):
         self.grant("view_consumptionreading", "export_consumptionreading")
         self.client.login(username="operador_norte", password=TEST_PASSWORD)
         response = self.client.get(self.url, {"q": "no-existe"})
-        self.assertEqual(len(self.load_rows(response)), 1)  # solo encabezados
+        self.assertEqual(len(self.load_rows(response)), 1)
 
     def test_anonymous_redirected(self):
         response = self.client.get(self.url)

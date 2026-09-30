@@ -1,17 +1,14 @@
 """
-Carga reproducible de datos de demostración para EcoEnergy.
+Carga reproducible de datos de demostración.
 
 Uso:
-    python manage.py seed_data            # carga inicial (BD vacía)
+    python manage.py seed_data            # carga inicial
     python manage.py seed_data --reset    # borra los datos de negocio y recarga
 
-Genera más de 1.000 registros de negocio distribuidos en 3 organizaciones,
-crea los roles (grupos) Administrador, Supervisor y Lector, y 3 usuarios
-de prueba cuyas contraseñas se leen desde variables de entorno (.env).
-
-Los datos son reproducibles: se usa un generador aleatorio con semilla fija,
-por lo que cada ejecución produce los mismos nombres, cantidades y valores.
-Las fechas se calculan hacia atrás desde el día de la ejecución.
+Crea 3 organizaciones con más de 1.000 registros de negocio, los roles
+Administrador, Supervisor y Lector, y usuarios de prueba cuyas contraseñas
+se leen desde el .env. Usa una semilla fija, por lo que siempre genera los
+mismos datos.
 """
 
 import os
@@ -140,10 +137,6 @@ class Command(BaseCommand):
             help="Elimina físicamente los datos de negocio antes de cargar.",
         )
 
-    # ------------------------------------------------------------------
-    # Punto de entrada
-    # ------------------------------------------------------------------
-
     def handle(self, *args, **options):
         users_config = self.read_users_config()
 
@@ -171,12 +164,7 @@ class Command(BaseCommand):
 
         self.print_summary(organizations, masters, zones, devices, readings, alerts)
 
-    # ------------------------------------------------------------------
-    # Configuración y limpieza
-    # ------------------------------------------------------------------
-
     def read_users_config(self):
-        """Lee las credenciales de los usuarios de prueba desde el entorno."""
         config = [
             {
                 "username": "admin_demo",
@@ -248,10 +236,6 @@ class Command(BaseCommand):
         ):
             model.all_objects.all().hard_delete()
 
-    # ------------------------------------------------------------------
-    # Tablas maestras
-    # ------------------------------------------------------------------
-
     def create_organizations(self):
         return [
             Organization.objects.create(name=name, tax_id=tax_id)
@@ -283,10 +267,6 @@ class Command(BaseCommand):
                 for name, level, color, description in SEVERITIES
             ],
         }
-
-    # ------------------------------------------------------------------
-    # Tablas operacionales
-    # ------------------------------------------------------------------
 
     def create_zones(self, organizations, masters):
         statuses = masters["zone_statuses"]
@@ -340,7 +320,6 @@ class Command(BaseCommand):
         for device in devices:
             days = self.random.sample(range(1, READING_WINDOW_DAYS + 1), READINGS_PER_DEVICE)
             for day in sorted(days, reverse=True):
-                # 12% de las lecturas son "peaks" sobre el consumo nominal.
                 if self.random.random() < 0.12:
                     factor = self.random.uniform(1.3, 1.9)
                 else:
@@ -408,11 +387,6 @@ class Command(BaseCommand):
         return Alert.objects.bulk_create(alerts, batch_size=500)
 
     def calibrate_zone_limits(self):
-        """
-        Ajusta el límite de cada zona en torno a su consumo real de los
-        últimos 30 días, para que el demo tenga zonas dentro y fuera del
-        límite (entre 75% y 140% del consumo observado).
-        """
         zones = annotate_zone_metrics(Zone.objects.all())
         for zone in zones:
             factor = Decimal(str(self.random.uniform(0.75, 1.4)))
@@ -420,10 +394,6 @@ class Command(BaseCommand):
                 money(zone.consumption_kwh * factor), Decimal("10.00")
             )
         Zone.objects.bulk_update(zones, ["consumption_limit_kwh"])
-
-    # ------------------------------------------------------------------
-    # Roles y usuarios
-    # ------------------------------------------------------------------
 
     def create_groups(self):
         operational = ["zone", "device", "consumptionreading", "alert"]
@@ -490,10 +460,6 @@ class Command(BaseCommand):
             UserProfile.objects.update_or_create(
                 user=user, defaults={"organization": organization}
             )
-
-    # ------------------------------------------------------------------
-    # Resumen
-    # ------------------------------------------------------------------
 
     def print_summary(self, organizations, masters, zones, devices, readings, alerts):
         master_total = len(organizations) + sum(

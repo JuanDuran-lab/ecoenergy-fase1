@@ -1,9 +1,6 @@
 """
-Validador de complejidad de contraseñas.
-
-Se registra en AUTH_PASSWORD_VALIDATORS (settings.py), por lo que Django
-lo aplica automáticamente en SetPasswordForm, en el Admin y en
-validate_password(). Complementa a MinimumLengthValidator (mínimo 10).
+Validador de complejidad de contraseñas (mayúscula, minúscula, número y
+carácter especial). Se registra en AUTH_PASSWORD_VALIDATORS de settings.py.
 """
 
 import re

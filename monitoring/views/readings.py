@@ -1,3 +1,7 @@
+"""
+CRUD de lecturas de consumo y exportación a Excel.
+"""
+
 from django.http import HttpResponse
 from django.utils import timezone
 from django.views import View
@@ -78,18 +82,9 @@ class ReadingDeleteView(ScopedSoftDeleteView):
     success_message = "Lectura «{label}» eliminada."
 
 
+# Exportación: exige permisos view y export, aplica scoping y los mismos
+# filtros del listado, y excluye los registros eliminados.
 class ReadingExportView(ModelPermissionMixin, View):
-    """
-    Descarga .xlsx de las lecturas.
-
-    Seguridad:
-    - ModelPermissionMixin: sesión + permisos view y export (403 si faltan).
-    - ConsumptionReading.objects excluye los registros eliminados lógicamente.
-    - scope_queryset() limita a la organización del usuario.
-    - filter_readings() aplica los mismos filtros del listado (?q, ?zone,
-      fechas), así el Excel contiene lo que el usuario está viendo.
-    """
-
     model = ConsumptionReading
     permission_required = (
         "monitoring.view_consumptionreading",

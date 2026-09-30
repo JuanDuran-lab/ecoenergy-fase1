@@ -1,10 +1,6 @@
 """
-Filtros de los listados.
-
-Se usan tanto en el listado HTML como en la exportación a Excel, para que
-el archivo descargado contenga exactamente lo que el usuario está viendo.
-El QuerySet que reciben ya viene filtrado por organización (scoping) y sin
-registros eliminados lógicamente.
+Filtros de los listados. Se usan en el listado HTML y en la exportación a
+Excel, para que el archivo contenga lo mismo que el usuario está viendo.
 """
 
 from django.db.models import Q

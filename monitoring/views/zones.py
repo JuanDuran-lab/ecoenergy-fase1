@@ -1,3 +1,7 @@
+"""
+CRUD de zonas y resumen de consumo por zona.
+"""
+
 from core.views import (
     ScopedCreateView,
     ScopedDetailView,
@@ -61,7 +65,6 @@ class ZoneSummaryView(ScopedListView):
     context_object_name = "zones"
 
     def get_paginate_by(self, queryset):
-        # El resumen muestra todas las zonas en una sola tabla.
         return None
 
     def get_queryset(self):
