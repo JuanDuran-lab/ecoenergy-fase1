@@ -1,3 +1,8 @@
+"""
+Paginación de los listados: el usuario elige 5, 15 o 30 registros y la
+elección se guarda en la sesión. Cualquier otro valor se normaliza a 15.
+"""
+
 from django.contrib import messages
 
 PAGE_SIZE_OPTIONS = (5, 15, 30)

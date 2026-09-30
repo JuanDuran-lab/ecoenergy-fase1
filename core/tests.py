@@ -1,3 +1,7 @@
+"""
+Pruebas de la paginación persistente en la sesión.
+"""
+
 from datetime import timedelta
 from decimal import Decimal
 

@@ -1,3 +1,7 @@
+"""
+CRUD de zonas y resumen de consumo por zona.
+"""
+
 from core.views import (
     ScopedCreateView,
     ScopedDetailView,

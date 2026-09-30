@@ -1,3 +1,10 @@
+"""
+Configuración de EcoEnergy.
+
+Todo valor sensible o que cambia entre ambientes (local / AWS) se lee desde
+variables de entorno cargadas del archivo .env. Ver .env.example.
+"""
+
 import os
 import sys
 from pathlib import Path
@@ -67,6 +74,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "ecoenergy.wsgi.application"
 
 
+# Base de datos: DB_ENGINE=sqlite (por defecto) o DB_ENGINE=postgresql,
+# con los datos de conexión definidos en el .env.
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").strip().lower()
 
 if DB_ENGINE == "postgresql":
@@ -91,6 +100,7 @@ else:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
+# Política de contraseñas: mínimo 10 caracteres y complejidad.
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
@@ -128,6 +138,7 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = Path(os.getenv("DJANGO_MEDIA_ROOT") or BASE_DIR / "media")
 
 
+# Correo: sin EMAIL_HOST en el .env, los correos se muestran en la consola.
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "EcoEnergy <no-reply@ecoenergy.local>")
 
 if os.getenv("EMAIL_HOST"):
@@ -152,6 +163,7 @@ else:
     }
 
 
+# Producción: límite de subida, cookies, cabeceras y HTTPS (DJANGO_USE_HTTPS).
 DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 

@@ -1,3 +1,9 @@
+"""
+Métricas reutilizables: dispositivos por zona y consumo de los últimos 30
+días. Las anotaciones (Count / Sum) filtran deleted_at explícitamente,
+porque los JOIN no pasan por el manager que oculta los eliminados.
+"""
+
 from datetime import timedelta
 from decimal import Decimal
 

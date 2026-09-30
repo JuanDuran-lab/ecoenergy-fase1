@@ -1,3 +1,10 @@
+"""
+Exportación de lecturas a Excel (.xlsx) con openpyxl.
+
+Recibe un QuerySet ya filtrado por permisos, organización y filtros del
+listado; construye el libro en memoria y lo devuelve para su descarga.
+"""
+
 from io import BytesIO
 
 from django.utils import timezone

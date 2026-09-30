@@ -1,3 +1,9 @@
+"""
+Pruebas de monitoreo: validaciones de los modelos, borrado lógico, scoping
+en el Admin y en las vistas, permisos por rol, carga de datos (seed_data),
+CRUD y exportación a Excel.
+"""
+
 from datetime import date, timedelta
 from decimal import Decimal
 

@@ -1,3 +1,11 @@
+"""
+Modelos de cuentas.
+
+- UserProfile: asigna la organización de cada usuario (base del scoping).
+- PasswordResetCode: código de 6 dígitos para recuperar la contraseña. Se
+  guarda hasheado, expira, limita intentos y no se puede reutilizar.
+"""
+
 import secrets
 from datetime import timedelta
 

@@ -1,3 +1,13 @@
+"""
+Login, logout y recuperación de contraseña.
+
+Recuperación en dos pasos:
+1. El usuario ingresa su correo y recibe un código de 6 dígitos. La
+   respuesta es la misma exista o no el correo (no revela usuarios).
+2. Ingresa el código y la nueva contraseña, validada con las mismas
+   reglas de settings.AUTH_PASSWORD_VALIDATORS.
+"""
+
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LoginView, LogoutView

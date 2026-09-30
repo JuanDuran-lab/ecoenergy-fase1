@@ -1,3 +1,8 @@
+"""
+Admin de usuarios: el perfil (organización) se edita como Inline dentro
+del usuario, y los códigos de recuperación son de solo lectura.
+"""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User

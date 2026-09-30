@@ -1,3 +1,7 @@
+/*
+ * Confirmación visual (SweetAlert2) antes de enviar un formulario de
+ * eliminación. La seguridad real se valida en el servidor.
+ */
 document.addEventListener("submit", function (event) {
     const form = event.target;
     if (!form.classList.contains("js-confirm-delete") || form.dataset.confirmed === "true") {

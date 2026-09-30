@@ -1,3 +1,11 @@
+"""
+Formularios de los CRUD (zonas, dispositivos, lecturas y alertas).
+
+Validan en el servidor duplicados y reglas de negocio. Los <select> de
+zona o dispositivo solo ofrecen registros de la organización del usuario,
+así un id ajeno enviado manipulando el HTML es rechazado.
+"""
+
 from decimal import Decimal
 
 from django import forms

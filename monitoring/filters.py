@@ -1,3 +1,8 @@
+"""
+Filtros de los listados. Se usan en el listado HTML y en la exportación a
+Excel, para que el archivo contenga lo mismo que el usuario está viendo.
+"""
+
 from django.db.models import Q
 from django.utils.dateparse import parse_date
 

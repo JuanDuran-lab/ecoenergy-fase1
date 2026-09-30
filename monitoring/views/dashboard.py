@@ -1,3 +1,8 @@
+"""
+Panel de inicio: totales, alertas abiertas y zonas sobre su límite de
+consumo, calculados solo con los datos visibles para el usuario.
+"""
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 

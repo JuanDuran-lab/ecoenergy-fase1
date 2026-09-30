@@ -1,3 +1,7 @@
+"""
+Rutas del módulo de monitoreo: dashboard, resumen y un CRUD por entidad.
+"""
+
 from django.urls import path
 
 from .views import alerts, dashboard, devices, readings, zones

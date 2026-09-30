@@ -1,3 +1,10 @@
+"""
+Controles de acceso de las vistas, en este orden:
+1. Sin sesión                -> redirige al login.
+2. Con sesión y sin permiso  -> HTTP 403.
+3. Registro de otra organización -> HTTP 404 (scoping).
+"""
+
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 
 from .scoping import scope_queryset

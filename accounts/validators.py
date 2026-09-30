@@ -1,3 +1,8 @@
+"""
+Validador de complejidad de contraseñas (mayúscula, minúscula, número y
+carácter especial). Se registra en AUTH_PASSWORD_VALIDATORS de settings.py.
+"""
+
 import re
 
 from django.core.exceptions import ValidationError

@@ -1,3 +1,7 @@
+"""
+CRUD de alertas.
+"""
+
 from django.utils import timezone
 
 from core.scoping import scope_queryset

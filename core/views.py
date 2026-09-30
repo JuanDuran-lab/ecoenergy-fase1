@@ -1,3 +1,11 @@
+"""
+Vistas base de los CRUD (listar, detalle, crear, editar, eliminar).
+
+Cada CRUD del proyecto hereda de estas clases y solo define modelo,
+formulario y plantillas, así login, permisos y scoping se aplican siempre
+de la misma forma.
+"""
+
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
@@ -89,6 +97,9 @@ class ScopedUpdateView(
     template_name = "core/form.html"
 
 
+# Eliminación: solo acepta POST con token CSRF, exige el permiso delete,
+# responde 404 si el registro es de otra organización y hace borrado
+# lógico. La confirmación con SweetAlert2 es solo visual.
 class ScopedSoftDeleteView(
     ModelPermissionMixin, OrganizationScopedMixin, SingleObjectMixin, View
 ):

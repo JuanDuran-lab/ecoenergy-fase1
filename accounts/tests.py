@@ -1,3 +1,8 @@
+"""
+Pruebas de cuentas: política de contraseñas, login/logout y flujo completo
+de recuperación de contraseña.
+"""
+
 import re
 from datetime import timedelta
 

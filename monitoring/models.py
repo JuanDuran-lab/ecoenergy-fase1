@@ -1,3 +1,16 @@
+"""
+Modelo de datos de EcoEnergy.
+
+- Tablas maestras: Organization, Category, ZoneType, ZoneStatus,
+  Manufacturer y AlertSeverity.
+- Tablas operacionales: Zone, Device, ConsumptionReading y Alert. Declaran
+  `organization_lookup` para el scoping y validan reglas de negocio en
+  clean().
+
+Las restricciones de unicidad solo consideran registros no eliminados
+(condition=ALIVE), para permitir recrear un registro borrado lógicamente.
+"""
+
 import uuid
 from decimal import Decimal
 from pathlib import Path
@@ -23,6 +36,11 @@ from .validators import (
 )
 
 ALIVE = Q(deleted_at__isnull=True)
+
+
+# ---------------------------------------------------------------------------
+# Tablas maestras
+# ---------------------------------------------------------------------------
 
 
 class Organization(SoftDeleteModel):
@@ -160,6 +178,11 @@ class AlertSeverity(SoftDeleteModel):
 
     def __str__(self):
         return self.name
+
+
+# ---------------------------------------------------------------------------
+# Tablas operacionales
+# ---------------------------------------------------------------------------
 
 
 class Zone(SoftDeleteModel):

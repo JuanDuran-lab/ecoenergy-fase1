@@ -1,3 +1,12 @@
+"""
+Clases base del Django Admin.
+
+- SoftDeleteAdmin: reemplaza el borrado físico por borrado lógico y agrega
+  un filtro para ver y restaurar eliminados.
+- OrganizationScopedAdminMixin: aplica al Admin el mismo scoping por
+  organización que las vistas (listado y opciones de las ForeignKey).
+"""
+
 from django.contrib import admin, messages
 
 from .scoping import get_user_organization, scope_queryset

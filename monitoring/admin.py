@@ -1,3 +1,14 @@
+"""
+Django Admin de EcoEnergy.
+
+- Tablas maestras y operacionales registradas con list_display,
+  search_fields, list_filter, ordering y list_select_related.
+- Inline: dispositivos (DeviceInline) dentro de la zona.
+- Acciones personalizadas: activar / desactivar dispositivos.
+- Validación: clean() de los modelos, que el Admin ejecuta al guardar.
+- Seguridad: las tablas operacionales aplican scoping por organización.
+"""
+
 from django.contrib import admin
 from django.utils.html import format_html
 
@@ -19,6 +30,11 @@ from .models import (
 admin.site.site_header = "EcoEnergy - Administración"
 admin.site.site_title = "EcoEnergy Admin"
 admin.site.index_title = "Panel de administración EcoEnergy"
+
+
+# ---------------------------------------------------------------------------
+# Tablas maestras
+# ---------------------------------------------------------------------------
 
 
 @admin.register(Organization)
@@ -73,6 +89,11 @@ class AlertSeverityAdmin(SoftDeleteAdmin):
             obj.color,
             obj.color,
         )
+
+
+# ---------------------------------------------------------------------------
+# Tablas operacionales (con scoping por organización)
+# ---------------------------------------------------------------------------
 
 
 class DeviceInline(admin.TabularInline):

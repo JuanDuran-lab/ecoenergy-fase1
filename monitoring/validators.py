@@ -1,3 +1,8 @@
+"""
+Validación de imágenes subidas: tamaño máximo, extensión permitida y
+contenido real (Pillow comprueba que el archivo sea una imagen).
+"""
+
 from django.core.exceptions import ValidationError
 from PIL import Image, UnidentifiedImageError
 

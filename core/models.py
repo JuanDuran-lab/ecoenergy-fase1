@@ -1,3 +1,11 @@
+"""
+Modelo base con auditoría y borrado lógico.
+
+Todas las tablas heredan de SoftDeleteModel: "eliminar" solo registra
+deleted_at y el manager por defecto (objects) oculta esos registros, por lo
+que ninguna vista, formulario ni el Admin borra filas físicamente.
+"""
+
 from django.db import models
 from django.utils import timezone
 

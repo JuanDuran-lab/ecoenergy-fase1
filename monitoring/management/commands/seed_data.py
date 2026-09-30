@@ -1,3 +1,16 @@
+"""
+Carga reproducible de datos de demostración.
+
+Uso:
+    python manage.py seed_data            # carga inicial
+    python manage.py seed_data --reset    # borra los datos de negocio y recarga
+
+Crea 3 organizaciones con más de 1.000 registros de negocio, los roles
+Administrador, Supervisor y Lector, y usuarios de prueba cuyas contraseñas
+se leen desde el .env. Usa una semilla fija, por lo que siempre genera los
+mismos datos.
+"""
+
 import os
 import random
 from datetime import timedelta
