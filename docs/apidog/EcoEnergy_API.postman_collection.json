@@ -1,0 +1,2725 @@
+{
+  "info": {
+    "name": "EcoEnergy API REST (EVA 3)",
+    "description": "Pruebas de la API REST de EcoEnergy: JWT, roles, CRUD, validaciones, paginación y scoping.\n\nUso: importar en Apidog junto con el entorno 'EcoEnergy local', completar las tres contraseñas en el entorno y ejecutar las carpetas en orden (01 a 07). Requiere el servidor local con 'python manage.py seed_data' cargado.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 JWT",
+      "description": "Obtiene los tokens de los tres usuarios y renueva el access del administrador. Los tokens quedan en variables del entorno; no se escriben en las solicitudes.",
+      "item": [
+        {
+          "name": "Obtener token · Administrador API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "var d = pm.response.json();",
+                  "pm.test(\"Entrega access y refresh\", function () { pm.expect(d).to.have.keys(\"access\", \"refresh\"); });",
+                  "pm.environment.set(\"admin_access\", d.access);",
+                  "pm.environment.set(\"admin_refresh\", d.refresh);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_user}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Renovar access · refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "var d = pm.response.json();",
+                  "pm.test(\"Entrega un access nuevo\", function () { pm.expect(d).to.have.property(\"access\"); });",
+                  "pm.environment.set(\"admin_access\", d.access);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token/refresh/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token",
+                "refresh",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (refresh token). Estado esperado: 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{admin_refresh}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Obtener token · Operador API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.environment.set(\"operator_access\", pm.response.json().access);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token",
+                ""
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{operator_user}}\",\n  \"password\": \"{{operator_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Obtener token · usuario sin rol API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.environment.set(\"guest_access\", pm.response.json().access);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token",
+                ""
+              ]
+            },
+            "description": "Identidad: Sin rol API (invitado_centro). Estado esperado: 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{guest_user}}\",\n  \"password\": \"{{guest_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Credenciales incorrectas → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token",
+                ""
+              ]
+            },
+            "description": "Identidad: supervisor_norte con contraseña incorrecta. Estado esperado: 401.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admin_user}}\",\n  \"password\": \"clave-incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Autenticación y roles",
+      "description": "401 sin token o con token inválido; 403 para escritura del operador y para el usuario sin rol API.",
+      "item": [
+        {
+          "name": "Sin token → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Sin token. Estado esperado: 401."
+          }
+        },
+        {
+          "name": "Token inválido → 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer token-invalido"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Token inválido. Estado esperado: 401."
+          }
+        },
+        {
+          "name": "Operador · GET zonas → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "",
+                  "var r = pm.response.json().results;",
+                  "pm.test(\"Solo ve zonas de su organización\", function () {",
+                  "  r.forEach(function (z) { pm.expect(z.organization_name).to.eql(r[0].organization_name); });",
+                  "});",
+                  "pm.environment.set(\"other_org_zone_id\", r[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "Operador · POST zona → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 403.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Zona no permitida\",\n  \"zone_type\": 1,\n  \"status\": 1,\n  \"consumption_limit_kwh\": \"100.00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Sin rol API · GET zonas → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{guest_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Sin rol API (invitado_centro). Estado esperado: 403."
+          }
+        },
+        {
+          "name": "Sin rol API · GET lecturas → 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{guest_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                ""
+              ]
+            },
+            "description": "Identidad: Sin rol API (invitado_centro). Estado esperado: 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Cobertura de modelos",
+      "description": "GET lista y GET detalle de los seis recursos con el Administrador API (EcoEnergy Norte).",
+      "item": [
+        {
+          "name": "GET lista · zonas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"zone_id\", pm.response.json().results[0].id);",
+                  "pm.environment.set(\"zone_type_id\", pm.response.json().results[0].zone_type);",
+                  "pm.environment.set(\"zone_status_id\", pm.response.json().results[0].status);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · zonas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"zone_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/{{zone_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                "{{zone_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET lista · dispositivos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"device_id\", pm.response.json().results[0].id);",
+                  "pm.environment.set(\"used_manufacturer_id\", pm.response.json().results[0].manufacturer);",
+                  "pm.environment.set(\"existing_serial\", pm.response.json().results[0].serial_number);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · dispositivos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"device_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/{{device_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                "{{device_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET lista · fabricantes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"manufacturer_id\", pm.response.json().results[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fabricantes/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fabricantes",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · fabricantes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"manufacturer_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fabricantes/{{manufacturer_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fabricantes",
+                "{{manufacturer_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET lista · categorias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"category_id\", pm.response.json().results[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · categorias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"category_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/categorias/{{category_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "categorias",
+                "{{category_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET lista · lecturas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"reading_id\", pm.response.json().results[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · lecturas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"reading_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/{{reading_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                "{{reading_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET lista · alertas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "pm.environment.set(\"alert_id\", pm.response.json().results[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alertas/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "alertas",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "GET detalle · alertas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Detalle del id pedido\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"alert_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/alertas/{{alert_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "alertas",
+                "{{alert_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 CRUD principales",
+      "description": "CRUD de los cuatro modelos principales con el Administrador API. DELETE es borrado lógico: responde 204 y el registro deja de aparecer (GET posterior → 404).",
+      "item": [
+        {
+          "name": "Categoría",
+          "description": "",
+          "item": [
+            {
+              "name": "POST categoría → 201",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set(\"run\", String(Date.now()).slice(-6));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.environment.set(\"new_category_id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categorias/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categorias",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 201.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Categoría API {{run}}\",\n  \"description\": \"Creada desde Apidog\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET categoría → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.test(\"Mismo id\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"new_category_id\"))); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categorias/{{new_category_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categorias",
+                    "{{new_category_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+              }
+            },
+            {
+              "name": "PATCH categoría → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categorias/{{new_category_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categorias",
+                    "{{new_category_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Descripción actualizada\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT categoría → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categorias/{{new_category_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categorias",
+                    "{{new_category_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Categoría API {{run}} editada\",\n  \"description\": \"Reemplazo completo\",\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fabricante",
+          "description": "",
+          "item": [
+            {
+              "name": "POST fabricante → 201",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.environment.set(\"new_manufacturer_id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fabricantes/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fabricantes",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 201.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Fabricante API {{run}}\",\n  \"country\": \"Chile\",\n  \"website\": \"https://ejemplo.cl\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET fabricante → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.test(\"Mismo id\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"new_manufacturer_id\"))); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fabricantes/{{new_manufacturer_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fabricantes",
+                    "{{new_manufacturer_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+              }
+            },
+            {
+              "name": "PATCH fabricante → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fabricantes/{{new_manufacturer_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fabricantes",
+                    "{{new_manufacturer_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"country\": \"Perú\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT fabricante → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fabricantes/{{new_manufacturer_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fabricantes",
+                    "{{new_manufacturer_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Fabricante API {{run}} editado\",\n  \"country\": \"Chile\",\n  \"website\": \"https://ejemplo.cl\",\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Zona",
+          "description": "",
+          "item": [
+            {
+              "name": "POST zona → 201",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "var d = pm.response.json();",
+                      "pm.environment.set(\"new_zone_id\", d.id);",
+                      "pm.test(\"Se asigna la organización del usuario\", function () { pm.expect(d.organization_name).to.eql(\"EcoEnergy Norte\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 201.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Zona API {{run}}\",\n  \"zone_type\": \"{{zone_type_id}}\",\n  \"status\": \"{{zone_status_id}}\",\n  \"consumption_limit_kwh\": \"250.00\",\n  \"description\": \"Creada desde Apidog\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET zona → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.test(\"Mismo id\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"new_zone_id\"))); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/{{new_zone_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    "{{new_zone_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+              }
+            },
+            {
+              "name": "PATCH zona → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/{{new_zone_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    "{{new_zone_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"consumption_limit_kwh\": \"300.00\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT zona → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/{{new_zone_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    "{{new_zone_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Zona API {{run}} editada\",\n  \"zone_type\": \"{{zone_type_id}}\",\n  \"status\": \"{{zone_status_id}}\",\n  \"consumption_limit_kwh\": \"320.00\",\n  \"description\": \"Reemplazo completo\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dispositivo",
+          "description": "",
+          "item": [
+            {
+              "name": "POST dispositivo → 201",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 201\", function () { pm.response.to.have.status(201); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.environment.set(\"new_device_id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 201.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"zone\": \"{{new_zone_id}}\",\n  \"name\": \"Medidor API {{run}}\",\n  \"serial_number\": \"EE-API-{{run}}\",\n  \"category\": \"{{new_category_id}}\",\n  \"manufacturer\": \"{{new_manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"12.50\",\n  \"installed_on\": \"2026-01-15\",\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "GET dispositivo → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                      "pm.test(\"Mismo id\", function () { pm.expect(String(pm.response.json().id)).to.eql(String(pm.environment.get(\"new_device_id\"))); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/{{new_device_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    "{{new_device_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200."
+              }
+            },
+            {
+              "name": "PATCH dispositivo → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/{{new_device_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    "{{new_device_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nominal_consumption_kwh\": \"15.00\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "PUT dispositivo → 200",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/{{new_device_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    "{{new_device_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"zone\": \"{{new_zone_id}}\",\n  \"name\": \"Medidor API {{run}} editado\",\n  \"serial_number\": \"EE-API-{{run}}\",\n  \"category\": \"{{new_category_id}}\",\n  \"manufacturer\": \"{{new_manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"16.00\",\n  \"installed_on\": \"2026-01-15\",\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "DELETE dispositivo → 204",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/{{new_device_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    "{{new_device_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 204."
+              }
+            },
+            {
+              "name": "GET dispositivo eliminado → 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/dispositivos/{{new_device_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "dispositivos",
+                    "{{new_device_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar zona y catálogos",
+          "description": "",
+          "item": [
+            {
+              "name": "DELETE zona → 204",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/{{new_zone_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    "{{new_zone_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 204."
+              }
+            },
+            {
+              "name": "GET zona eliminada → 404",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                      "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/zonas/{{new_zone_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "zonas",
+                    "{{new_zone_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404."
+              }
+            },
+            {
+              "name": "DELETE fabricante → 204",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/fabricantes/{{new_manufacturer_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "fabricantes",
+                    "{{new_manufacturer_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 204."
+              }
+            },
+            {
+              "name": "DELETE categoría → 204",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Estado 204\", function () { pm.response.to.have.status(204); });"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{admin_access}}"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/categorias/{{new_category_id}}/",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "categorias",
+                    "{{new_category_id}}",
+                    ""
+                  ]
+                },
+                "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 204."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Validaciones y errores",
+      "description": "Dos validaciones de campo, una de relación, una regla de negocio, id inexistente y borrado bloqueado.",
+      "item": [
+        {
+          "name": "Validación de campo: número de serie → 400",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"run\")) { pm.environment.set(\"run\", String(Date.now()).slice(-6)); }"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Error en el campo serial_number\", function () { pm.expect(pm.response.json()).to.have.property(\"serial_number\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zone\": \"{{zone_id}}\",\n  \"name\": \"Medidor inválido {{run}}\",\n  \"serial_number\": \"ee api 1\",\n  \"category\": \"{{category_id}}\",\n  \"manufacturer\": \"{{manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"10.00\",\n  \"installed_on\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Validación de campo: instalación futura → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Error en el campo installed_on\", function () { pm.expect(pm.response.json()).to.have.property(\"installed_on\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zone\": \"{{zone_id}}\",\n  \"name\": \"Medidor inválido {{run}}\",\n  \"serial_number\": \"EE-VAL-{{run}}\",\n  \"category\": \"{{category_id}}\",\n  \"manufacturer\": \"{{manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"10.00\",\n  \"installed_on\": \"2099-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Validación de relación: zona de otra organización → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Error en el campo zone\", function () { pm.expect(pm.response.json()).to.have.property(\"zone\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zone\": \"{{other_org_zone_id}}\",\n  \"name\": \"Medidor inválido {{run}}\",\n  \"serial_number\": \"EE-VAL-{{run}}\",\n  \"category\": \"{{category_id}}\",\n  \"manufacturer\": \"{{manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"10.00\",\n  \"installed_on\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Regla de negocio: número de serie duplicado → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Error en el campo serial_number\", function () { pm.expect(pm.response.json()).to.have.property(\"serial_number\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/dispositivos/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "dispositivos",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 400.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"zone\": \"{{zone_id}}\",\n  \"name\": \"Medidor inválido {{run}}\",\n  \"serial_number\": \"{{existing_serial}}\",\n  \"category\": \"{{category_id}}\",\n  \"manufacturer\": \"{{manufacturer_id}}\",\n  \"nominal_consumption_kwh\": \"10.00\",\n  \"installed_on\": \"2026-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Id inexistente → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Mensaje de error\", function () { pm.expect(pm.response.json()).to.have.property(\"detail\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/999999/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                "999999",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404."
+          }
+        },
+        {
+          "name": "Fabricante con dispositivos → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 409\", function () { pm.response.to.have.status(409); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/fabricantes/{{used_manufacturer_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "fabricantes",
+                "{{used_manufacturer_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 409."
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Paginación",
+      "description": "20 registros por página; otra página con ?page=N y otro tamaño con ?page_size= (máximo 100).",
+      "item": [
+        {
+          "name": "Lecturas página 1 → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Lista paginada\", function () { var d = pm.response.json(); pm.expect(d).to.have.keys(\"count\",\"total_pages\",\"page\",\"page_size\",\"next\",\"previous\",\"results\"); });",
+                  "var d = pm.response.json();",
+                  "pm.test(\"20 resultados y varias páginas\", function () { pm.expect(d.results.length).to.eql(20); pm.expect(d.total_pages).to.be.above(1); });",
+                  "pm.environment.set(\"page1_ids\", JSON.stringify(d.results.map(function (r) { return r.id; })));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/?page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "Lecturas página 2 → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "var d = pm.response.json();",
+                  "var first = JSON.parse(pm.environment.get(\"page1_ids\"));",
+                  "pm.test(\"Página 2 con resultados distintos\", function () {",
+                  "  pm.expect(d.page).to.eql(2);",
+                  "  d.results.forEach(function (r) { pm.expect(first).to.not.include(r.id); });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/?page=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200."
+          }
+        },
+        {
+          "name": "Tamaño de página 50 → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"50 resultados\", function () { pm.expect(pm.response.json().results.length).to.eql(50); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{operator_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/lecturas/?page_size=50&page=3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "lecturas",
+                ""
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "50"
+                },
+                {
+                  "key": "page",
+                  "value": "3"
+                }
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200."
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Scoping por organización",
+      "description": "Un registro de otra organización no se ve ni se modifica: responde 404.",
+      "item": [
+        {
+          "name": "Administrador Norte · GET zona de Sur → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/{{other_org_zone_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                "{{other_org_zone_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404."
+          }
+        },
+        {
+          "name": "Administrador Norte · PATCH zona de Sur → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_access}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonas/{{other_org_zone_id}}/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonas",
+                "{{other_org_zone_id}}",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Intento de modificar datos ajenos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
