@@ -13,7 +13,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+ENV_FILE = BASE_DIR / ".env"
+load_dotenv(ENV_FILE)
+
+DEV_SECRET_KEY = "django-insecure-clave-solo-desarrollo"
+EXAMPLE_SECRET_KEY = "coloca-aqui-una-clave-larga-y-aleatoria"
 
 
 def env_bool(name, default=False):
@@ -24,7 +28,7 @@ def env_list(name, default=""):
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-clave-solo-desarrollo")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or DEV_SECRET_KEY
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
 
@@ -233,8 +237,21 @@ CSRF_COOKIE_SECURE = USE_HTTPS
 if USE_HTTPS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-if not DEBUG and SECRET_KEY.startswith("django-insecure"):
-    raise RuntimeError("Define DJANGO_SECRET_KEY en el .env antes de ejecutar en producción.")
+# Sin .env (o con la clave de ejemplo) el proyecto no arranca con DEBUG=False:
+# el mensaje indica exactamente qué falta.
+if not DEBUG and SECRET_KEY in (DEV_SECRET_KEY, EXAMPLE_SECRET_KEY):
+    if not ENV_FILE.exists():
+        raise RuntimeError(
+            f"No se encontró el archivo .env en {BASE_DIR}. Créelo desde la "
+            "plantilla (Windows: Copy-Item .env.example .env | Linux/macOS: "
+            "cp .env.example .env) y complete DJANGO_SECRET_KEY y las "
+            "contraseñas SEED_*."
+        )
+    raise RuntimeError(
+        f"Falta DJANGO_SECRET_KEY en {ENV_FILE}. Complete una clave larga y "
+        "aleatoria (python -c \"import secrets; print(secrets.token_urlsafe(50))\") "
+        "o use DJANGO_DEBUG=True solo para desarrollo local."
+    )
 
 LOGGING = {
     "version": 1,

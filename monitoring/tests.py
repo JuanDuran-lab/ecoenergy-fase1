@@ -327,6 +327,22 @@ class SeedCommandTests(TestCase):
                 call_command("seed_data", stdout=StringIO())
 
 
+    def test_seed_lists_every_missing_password(self):
+        from io import StringIO
+        from unittest import mock
+
+        from django.core.management import CommandError, call_command
+
+        env = dict(self.ENV, SEED_ADMIN_PASSWORD="", SEED_GUEST_PASSWORD="  ")
+        with mock.patch.dict("os.environ", env):
+            with self.assertRaises(CommandError) as context:
+                call_command("seed_data", stdout=StringIO())
+        message = str(context.exception)
+        self.assertIn("SEED_ADMIN_PASSWORD", message)
+        self.assertIn("SEED_GUEST_PASSWORD", message)
+        self.assertNotIn("SEED_READER_PASSWORD", message)
+
+
 class ViewPermissionAndScopingTests(EcoEnergyBaseTest):
     def setUp(self):
         super().setUp()
