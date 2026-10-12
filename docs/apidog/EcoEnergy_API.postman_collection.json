@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "EcoEnergy API REST (EVA 3)",
-    "description": "Pruebas de la API REST de EcoEnergy: JWT, roles, CRUD, validaciones, paginación y scoping.\n\nUso: importar en Apidog junto con el entorno 'EcoEnergy local', completar las tres contraseñas en el entorno y ejecutar las carpetas en orden (01 a 07). Requiere el servidor local con 'python manage.py seed_data' cargado.",
+    "description": "Pruebas de la API REST de EcoEnergy: JWT, roles, CRUD, validaciones, paginación y scoping.\n\nUso: importar en Apidog junto con el entorno 'EcoEnergy local', completar en el entorno supervisor_password (SEED_SUPERVISOR_PASSWORD), lector_password (SEED_READER_PASSWORD) e invitado_password (SEED_GUEST_PASSWORD), y ejecutar las carpetas en orden (01 a 07). Requiere el servidor local con 'python manage.py seed_data' cargado.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -21,8 +21,8 @@
                   "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
                   "var d = pm.response.json();",
                   "pm.test(\"Entrega access y refresh\", function () { pm.expect(d).to.have.keys(\"access\", \"refresh\"); });",
-                  "pm.environment.set(\"admin_access\", d.access);",
-                  "pm.environment.set(\"admin_refresh\", d.refresh);"
+                  "pm.environment.set(\"supervisor_access\", d.access);",
+                  "pm.environment.set(\"supervisor_refresh\", d.refresh);"
                 ]
               }
             }
@@ -53,7 +53,7 @@
             "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 200.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{admin_user}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "raw": "{\n  \"username\": \"{{supervisor_user}}\",\n  \"password\": \"{{supervisor_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -74,7 +74,7 @@
                   "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
                   "var d = pm.response.json();",
                   "pm.test(\"Entrega un access nuevo\", function () { pm.expect(d).to.have.property(\"access\"); });",
-                  "pm.environment.set(\"admin_access\", d.access);"
+                  "pm.environment.set(\"supervisor_access\", d.access);"
                 ]
               }
             }
@@ -106,7 +106,7 @@
             "description": "Identidad: Administrador API (refresh token). Estado esperado: 200.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"refresh\": \"{{admin_refresh}}\"\n}",
+              "raw": "{\n  \"refresh\": \"{{supervisor_refresh}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -125,7 +125,7 @@
                 "exec": [
                   "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
                   "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
-                  "pm.environment.set(\"operator_access\", pm.response.json().access);"
+                  "pm.environment.set(\"lector_access\", pm.response.json().access);"
                 ]
               }
             }
@@ -156,7 +156,7 @@
             "description": "Identidad: Operador API (lector_sur). Estado esperado: 200.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{operator_user}}\",\n  \"password\": \"{{operator_password}}\"\n}",
+              "raw": "{\n  \"username\": \"{{lector_user}}\",\n  \"password\": \"{{lector_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -175,7 +175,7 @@
                 "exec": [
                   "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
                   "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
-                  "pm.environment.set(\"guest_access\", pm.response.json().access);"
+                  "pm.environment.set(\"invitado_access\", pm.response.json().access);"
                 ]
               }
             }
@@ -206,7 +206,7 @@
             "description": "Identidad: Sin rol API (invitado_centro). Estado esperado: 200.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{guest_user}}\",\n  \"password\": \"{{guest_password}}\"\n}",
+              "raw": "{\n  \"username\": \"{{invitado_user}}\",\n  \"password\": \"{{invitado_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -255,7 +255,56 @@
             "description": "Identidad: supervisor_norte con contraseña incorrecta. Estado esperado: 401.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"username\": \"{{admin_user}}\",\n  \"password\": \"clave-incorrecta\"\n}",
+              "raw": "{\n  \"username\": \"{{supervisor_user}}\",\n  \"password\": \"clave-incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Token sin barra final → 200",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Entrega access\", function () { pm.expect(pm.response.json()).to.have.property(\"access\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "token"
+              ]
+            },
+            "description": "Identidad: Operador API (lector_sur). Estado esperado: 200.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{lector_user}}\",\n  \"password\": \"{{lector_password}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -376,7 +425,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{operator_access}}"
+                "value": "Bearer {{lector_access}}"
               }
             ],
             "url": {
@@ -416,7 +465,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{operator_access}}"
+                "value": "Bearer {{lector_access}}"
               },
               {
                 "key": "Content-Type",
@@ -469,7 +518,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{guest_access}}"
+                "value": "Bearer {{invitado_access}}"
               }
             ],
             "url": {
@@ -509,7 +558,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{guest_access}}"
+                "value": "Bearer {{invitado_access}}"
               }
             ],
             "url": {
@@ -559,7 +608,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -600,7 +649,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -645,7 +694,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -686,7 +735,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -729,7 +778,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -770,7 +819,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -813,7 +862,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -854,7 +903,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -897,7 +946,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -938,7 +987,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -981,7 +1030,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -1022,7 +1071,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -1083,7 +1132,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1137,7 +1186,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -1178,7 +1227,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1232,7 +1281,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1293,7 +1342,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1347,7 +1396,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -1388,7 +1437,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1442,7 +1491,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1505,7 +1554,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1559,7 +1608,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -1600,7 +1649,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1654,7 +1703,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1715,7 +1764,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1769,7 +1818,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -1810,7 +1859,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1864,7 +1913,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   },
                   {
                     "key": "Content-Type",
@@ -1917,7 +1966,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -1958,7 +2007,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -2004,7 +2053,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -2045,7 +2094,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -2085,7 +2134,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -2125,7 +2174,7 @@
                   },
                   {
                     "key": "Authorization",
-                    "value": "Bearer {{admin_access}}"
+                    "value": "Bearer {{supervisor_access}}"
                   }
                 ],
                 "url": {
@@ -2184,7 +2233,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               },
               {
                 "key": "Content-Type",
@@ -2238,7 +2287,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               },
               {
                 "key": "Content-Type",
@@ -2292,7 +2341,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               },
               {
                 "key": "Content-Type",
@@ -2346,7 +2395,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               },
               {
                 "key": "Content-Type",
@@ -2377,6 +2426,47 @@
           }
         },
         {
+          "name": "Ruta inexistente → 404 JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Respuesta JSON\", function () { pm.expect(pm.response.json()).to.be.an(\"object\"); });",
+                  "pm.test(\"Mensaje de error\", function () { pm.expect(pm.response.json()).to.have.property(\"detail\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{supervisor_access}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/zonass/",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "zonass",
+                ""
+              ]
+            },
+            "description": "Identidad: Administrador API (supervisor_norte). Estado esperado: 404."
+          }
+        },
+        {
           "name": "Id inexistente → 404",
           "event": [
             {
@@ -2400,7 +2490,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -2441,7 +2531,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -2492,7 +2582,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{operator_access}}"
+                "value": "Bearer {{lector_access}}"
               }
             ],
             "url": {
@@ -2544,7 +2634,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{operator_access}}"
+                "value": "Bearer {{lector_access}}"
               }
             ],
             "url": {
@@ -2591,7 +2681,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{operator_access}}"
+                "value": "Bearer {{lector_access}}"
               }
             ],
             "url": {
@@ -2647,7 +2737,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               }
             ],
             "url": {
@@ -2688,7 +2778,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer {{admin_access}}"
+                "value": "Bearer {{supervisor_access}}"
               },
               {
                 "key": "Content-Type",

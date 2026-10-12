@@ -1,0 +1,2238 @@
+openapi: 3.0.3
+info:
+  title: EcoEnergy API REST
+  version: 1.0.0
+  description: 'API de monitoreo energético. Autenticación JWT: POST /api/token/ y
+    header Authorization: Bearer <access>. Roles: Administrador API (lectura y escritura),
+    Operador API (solo lectura); sin rol API -> 403. Scoping por organización: un
+    registro de otra organización -> 404.'
+paths:
+  /api/alertas/:
+    get:
+      operationId: alertas_list
+      description: Lista paginada de alertas (20 por página; ?page= y ?page_size=,
+        máx. 100).
+      summary: Listar alertas
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: título, descripción.'
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - in_progress
+          - open
+          - resolved
+        description: Solo alertas en este estado.
+      tags:
+      - alertas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlertList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/alertas/{id}/:
+    get:
+      operationId: alertas_retrieve
+      description: Alertas de consumo de la organización del usuario (solo lectura).
+      summary: Ver alerta
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este alerta.
+        required: true
+      tags:
+      - alertas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/categorias/:
+    get:
+      operationId: categorias_list
+      description: Lista paginada de categorías (20 por página; ?page= y ?page_size=,
+        máx. 100).
+      summary: Listar categorías
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: nombre.'
+      tags:
+      - categorias
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: categorias_create
+      description: 'Categorías de dispositivo: catálogo compartido por todas las organizaciones.'
+      summary: Crear categoría
+      tags:
+      - categorias
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+  /api/categorias/{id}/:
+    get:
+      operationId: categorias_retrieve
+      description: 'Categorías de dispositivo: catálogo compartido por todas las organizaciones.'
+      summary: Ver categoría
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este categoría.
+        required: true
+      tags:
+      - categorias
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: categorias_update
+      description: 'Categorías de dispositivo: catálogo compartido por todas las organizaciones.'
+      summary: Reemplazar categoría (PUT)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este categoría.
+        required: true
+      tags:
+      - categorias
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    patch:
+      operationId: categorias_partial_update
+      description: 'Categorías de dispositivo: catálogo compartido por todas las organizaciones.'
+      summary: Modificar categoría (PATCH)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este categoría.
+        required: true
+      tags:
+      - categorias
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    delete:
+      operationId: categorias_destroy
+      description: 'Borrado lógico: marca deleted_at y responde 204; el registro deja
+        de aparecer en las consultas.'
+      summary: Eliminar categoría
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este categoría.
+        required: true
+      tags:
+      - categorias
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'No se puede eliminar: el registro está asociado a dispositivos.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/dispositivos/:
+    get:
+      operationId: dispositivos_list
+      description: Lista paginada de dispositivos (20 por página; ?page= y ?page_size=,
+        máx. 100).
+      summary: Listar dispositivos
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: nombre, número de serie.'
+      - in: query
+        name: zone
+        schema:
+          type: integer
+        description: Solo dispositivos de esta zona.
+      tags:
+      - dispositivos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDeviceList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: dispositivos_create
+      description: Dispositivos de las zonas de la organización del usuario.
+      summary: Crear dispositivo
+      tags:
+      - dispositivos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+  /api/dispositivos/{id}/:
+    get:
+      operationId: dispositivos_retrieve
+      description: Dispositivos de las zonas de la organización del usuario.
+      summary: Ver dispositivo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este dispositivo.
+        required: true
+      tags:
+      - dispositivos
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: dispositivos_update
+      description: Dispositivos de las zonas de la organización del usuario.
+      summary: Reemplazar dispositivo (PUT)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este dispositivo.
+        required: true
+      tags:
+      - dispositivos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    patch:
+      operationId: dispositivos_partial_update
+      description: Dispositivos de las zonas de la organización del usuario.
+      summary: Modificar dispositivo (PATCH)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este dispositivo.
+        required: true
+      tags:
+      - dispositivos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDeviceRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    delete:
+      operationId: dispositivos_destroy
+      description: 'Borrado lógico: marca deleted_at y responde 204; el registro deja
+        de aparecer en las consultas.'
+      summary: Eliminar dispositivo
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este dispositivo.
+        required: true
+      tags:
+      - dispositivos
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/fabricantes/:
+    get:
+      operationId: fabricantes_list
+      description: Lista paginada de fabricantes (20 por página; ?page= y ?page_size=,
+        máx. 100).
+      summary: Listar fabricantes
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: nombre.'
+      tags:
+      - fabricantes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedManufacturerList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: fabricantes_create
+      description: 'Fabricantes: catálogo compartido por todas las organizaciones.'
+      summary: Crear fabricante
+      tags:
+      - fabricantes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManufacturerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manufacturer'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+  /api/fabricantes/{id}/:
+    get:
+      operationId: fabricantes_retrieve
+      description: 'Fabricantes: catálogo compartido por todas las organizaciones.'
+      summary: Ver fabricante
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este fabricante.
+        required: true
+      tags:
+      - fabricantes
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manufacturer'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: fabricantes_update
+      description: 'Fabricantes: catálogo compartido por todas las organizaciones.'
+      summary: Reemplazar fabricante (PUT)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este fabricante.
+        required: true
+      tags:
+      - fabricantes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManufacturerRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manufacturer'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    patch:
+      operationId: fabricantes_partial_update
+      description: 'Fabricantes: catálogo compartido por todas las organizaciones.'
+      summary: Modificar fabricante (PATCH)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este fabricante.
+        required: true
+      tags:
+      - fabricantes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedManufacturerRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Manufacturer'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    delete:
+      operationId: fabricantes_destroy
+      description: 'Borrado lógico: marca deleted_at y responde 204; el registro deja
+        de aparecer en las consultas.'
+      summary: Eliminar fabricante
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este fabricante.
+        required: true
+      tags:
+      - fabricantes
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: 'No se puede eliminar: el registro está asociado a dispositivos.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/lecturas/:
+    get:
+      operationId: lecturas_list
+      description: Lista paginada de lecturas (20 por página; ?page= y ?page_size=,
+        máx. 100).
+      summary: Listar lecturas
+      parameters:
+      - in: query
+        name: device
+        schema:
+          type: integer
+        description: Solo lecturas de este dispositivo.
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: dispositivo, número de serie, observaciones.'
+      tags:
+      - lecturas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedConsumptionReadingList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/lecturas/{id}/:
+    get:
+      operationId: lecturas_retrieve
+      description: Lecturas de consumo de la organización del usuario (solo lectura).
+      summary: Ver lectura
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este lectura de consumo.
+        required: true
+      tags:
+      - lecturas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsumptionReading'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/token/:
+    post:
+      operationId: token_create
+      description: 'Con usuario y contraseña entrega access (30 min) y refresh (1
+        día). El access se envía en cada solicitud como Authorization: Bearer <access>.'
+      summary: Obtener token JWT
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+        '400':
+          description: Faltan campos obligatorios.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+        '401':
+          description: Credenciales incorrectas, o refresh token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/token/refresh/:
+    post:
+      operationId: token_refresh_create
+      description: Con un refresh vigente entrega un access nuevo.
+      summary: Renovar access token
+      tags:
+      - token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+        '400':
+          description: Faltan campos obligatorios.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+        '401':
+          description: Credenciales incorrectas, o refresh token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/zonas/:
+    get:
+      operationId: zonas_list
+      description: Lista paginada de zonas (20 por página; ?page= y ?page_size=, máx.
+        100).
+      summary: Listar zonas
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: Un número de página dentro del conjunto de resultados paginado.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Número de resultados a devolver por página.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: 'Busca texto en: nombre, descripción.'
+      tags:
+      - zonas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedZoneList'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      operationId: zonas_create
+      description: Zonas de la organización del usuario. Al crear, la organización
+        se asigna sola.
+      summary: Crear zona
+      tags:
+      - zonas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+  /api/zonas/{id}/:
+    get:
+      operationId: zonas_retrieve
+      description: Zonas de la organización del usuario. Al crear, la organización
+        se asigna sola.
+      summary: Ver zona
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este zona.
+        required: true
+      tags:
+      - zonas
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: zonas_update
+      description: Zonas de la organización del usuario. Al crear, la organización
+        se asigna sola.
+      summary: Reemplazar zona (PUT)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este zona.
+        required: true
+      tags:
+      - zonas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoneRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    patch:
+      operationId: zonas_partial_update
+      description: Zonas de la organización del usuario. Al crear, la organización
+        se asigna sola.
+      summary: Modificar zona (PATCH)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este zona.
+        required: true
+      tags:
+      - zonas
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedZoneRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '400':
+          description: 'Datos inválidos: errores de validación por campo.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErroresValidacion'
+    delete:
+      operationId: zonas_destroy
+      description: 'Borrado lógico: marca deleted_at y responde 204; el registro deja
+        de aparecer en las consultas.'
+      summary: Eliminar zona
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: Un valor de entero único que identifique este zona.
+        required: true
+      tags:
+      - zonas
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+        '401':
+          description: Sin token JWT, o token inválido o vencido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: El usuario no tiene rol API, o es Operador API e intenta escribir.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: El registro no existe o no pertenece a la organización del
+            usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Alert:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zone:
+          type: integer
+          readOnly: true
+          title: Zona
+        zone_name:
+          type: string
+          readOnly: true
+        organization_name:
+          type: string
+          readOnly: true
+        device:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Dispositivo
+        device_name:
+          type: string
+          readOnly: true
+        reading:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Lectura que la originó
+        severity:
+          type: integer
+          readOnly: true
+          title: Severidad
+        severity_name:
+          type: string
+          readOnly: true
+        severity_level:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+          title: Título
+        description:
+          type: string
+          readOnly: true
+          title: Descripción
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusEnum'
+          readOnly: true
+          title: Estado
+        status_display:
+          type: string
+          readOnly: true
+        detected_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Detectada el
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Resuelta el
+      required:
+      - description
+      - detected_at
+      - device
+      - device_name
+      - id
+      - organization_name
+      - reading
+      - resolved_at
+      - severity
+      - severity_level
+      - severity_name
+      - status
+      - status_display
+      - title
+      - zone
+      - zone_name
+    Category:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nombre
+          maxLength: 100
+        description:
+          type: string
+          title: Descripción
+        is_active:
+          type: boolean
+          title: Activa
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Actualizado el
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    CategoryRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 100
+        description:
+          type: string
+          title: Descripción
+        is_active:
+          type: boolean
+          title: Activa
+      required:
+      - name
+    ConsumptionReading:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        device:
+          type: integer
+          readOnly: true
+          title: Dispositivo
+        device_name:
+          type: string
+          readOnly: true
+        zone:
+          type: integer
+          readOnly: true
+        zone_name:
+          type: string
+          readOnly: true
+        organization_name:
+          type: string
+          readOnly: true
+        reading_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Fecha y hora de lectura
+        consumption_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+          title: Consumo (kWh)
+        nominal_consumption_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          readOnly: true
+        is_over_nominal:
+          type: boolean
+          readOnly: true
+        notes:
+          type: string
+          readOnly: true
+          title: Observaciones
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+      required:
+      - consumption_kwh
+      - created_at
+      - device
+      - device_name
+      - id
+      - is_over_nominal
+      - nominal_consumption_kwh
+      - notes
+      - organization_name
+      - reading_at
+      - zone
+      - zone_name
+    Device:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        zone:
+          type: integer
+        zone_name:
+          type: string
+          readOnly: true
+        organization:
+          type: integer
+          readOnly: true
+        organization_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          title: Nombre
+          maxLength: 120
+        serial_number:
+          type: string
+          title: Número de serie
+          pattern: ^[A-Z0-9-]{4,40}$
+          maxLength: 40
+        category:
+          type: integer
+          title: Categoría
+        category_name:
+          type: string
+          readOnly: true
+        manufacturer:
+          type: integer
+          title: Fabricante
+        manufacturer_name:
+          type: string
+          readOnly: true
+        nominal_consumption_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Consumo nominal (kWh)
+          description: Consumo energético nominal del dispositivo en kWh (0,01 a 5.000).
+        installed_on:
+          type: string
+          format: date
+          title: Fecha de instalación
+        is_active:
+          type: boolean
+          title: Activo
+        image:
+          type: string
+          format: uri
+          nullable: true
+          readOnly: true
+          title: Imagen
+          description: JPG, PNG o WEBP. Máximo 2 MB.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Actualizado el
+      required:
+      - category
+      - category_name
+      - created_at
+      - id
+      - image
+      - installed_on
+      - manufacturer
+      - manufacturer_name
+      - name
+      - nominal_consumption_kwh
+      - organization
+      - organization_name
+      - serial_number
+      - updated_at
+      - zone
+      - zone_name
+    DeviceRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        zone:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        serial_number:
+          type: string
+          minLength: 1
+          title: Número de serie
+          pattern: ^[A-Z0-9-]{4,40}$
+          maxLength: 40
+        category:
+          type: integer
+          title: Categoría
+        manufacturer:
+          type: integer
+          title: Fabricante
+        nominal_consumption_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Consumo nominal (kWh)
+          description: Consumo energético nominal del dispositivo en kWh (0,01 a 5.000).
+        installed_on:
+          type: string
+          format: date
+          title: Fecha de instalación
+        is_active:
+          type: boolean
+          title: Activo
+      required:
+      - category
+      - installed_on
+      - manufacturer
+      - name
+      - nominal_consumption_kwh
+      - serial_number
+      - zone
+    Manufacturer:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Nombre
+          maxLength: 120
+        country:
+          type: string
+          title: País
+          maxLength: 80
+        website:
+          title: Sitio web
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+          title: Activo
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Actualizado el
+      required:
+      - created_at
+      - id
+      - name
+      - updated_at
+    ManufacturerRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        country:
+          type: string
+          title: País
+          maxLength: 80
+        website:
+          title: Sitio web
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+          title: Activo
+      required:
+      - name
+    PaginatedAlertList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+    PaginatedCategoryList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedConsumptionReadingList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsumptionReading'
+    PaginatedDeviceList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Device'
+    PaginatedManufacturerList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Manufacturer'
+    PaginatedZoneList:
+      type: object
+      required:
+      - count
+      - total_pages
+      - page
+      - page_size
+      - results
+      properties:
+        count:
+          type: integer
+          example: 600
+        total_pages:
+          type: integer
+          example: 30
+        page:
+          type: integer
+          example: 2
+        page_size:
+          type: integer
+          example: 20
+        next:
+          type: string
+          nullable: true
+          format: uri
+        previous:
+          type: string
+          nullable: true
+          format: uri
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+    PatchedCategoryRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 100
+        description:
+          type: string
+          title: Descripción
+        is_active:
+          type: boolean
+          title: Activa
+    PatchedDeviceRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        zone:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        serial_number:
+          type: string
+          minLength: 1
+          title: Número de serie
+          pattern: ^[A-Z0-9-]{4,40}$
+          maxLength: 40
+        category:
+          type: integer
+          title: Categoría
+        manufacturer:
+          type: integer
+          title: Fabricante
+        nominal_consumption_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Consumo nominal (kWh)
+          description: Consumo energético nominal del dispositivo en kWh (0,01 a 5.000).
+        installed_on:
+          type: string
+          format: date
+          title: Fecha de instalación
+        is_active:
+          type: boolean
+          title: Activo
+    PatchedManufacturerRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        country:
+          type: string
+          title: País
+          maxLength: 80
+        website:
+          title: Sitio web
+          oneOf:
+          - type: string
+            format: uri
+            maxLength: 200
+          - type: string
+            maxLength: 0
+        is_active:
+          type: boolean
+          title: Activo
+    PatchedZoneRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        organization:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        zone_type:
+          type: integer
+          title: Tipo
+        status:
+          type: integer
+          title: Estado
+        consumption_limit_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Límite de consumo (kWh)
+          description: Límite de consumo energético permitido para la zona.
+        description:
+          type: string
+          title: Descripción
+    StatusEnum:
+      enum:
+      - open
+      - in_progress
+      - resolved
+      type: string
+      description: |-
+        * `open` - Abierta
+        * `in_progress` - En revisión
+        * `resolved` - Resuelta
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+      required:
+      - access
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - refresh
+    Zone:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organization:
+          type: integer
+        organization_name:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          title: Nombre
+          maxLength: 120
+        zone_type:
+          type: integer
+          title: Tipo
+        zone_type_name:
+          type: string
+          readOnly: true
+        status:
+          type: integer
+          title: Estado
+        status_name:
+          type: string
+          readOnly: true
+        consumption_limit_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Límite de consumo (kWh)
+          description: Límite de consumo energético permitido para la zona.
+        description:
+          type: string
+          title: Descripción
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Creado el
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Actualizado el
+      required:
+      - consumption_limit_kwh
+      - created_at
+      - id
+      - name
+      - organization_name
+      - status
+      - status_name
+      - updated_at
+      - zone_type
+      - zone_type_name
+    ZoneRequest:
+      type: object
+      description: 'Base de los serializers con escritura: usuario actual y reglas
+        del modelo.'
+      properties:
+        organization:
+          type: integer
+        name:
+          type: string
+          minLength: 1
+          title: Nombre
+          maxLength: 120
+        zone_type:
+          type: integer
+          title: Tipo
+        status:
+          type: integer
+          title: Estado
+        consumption_limit_kwh:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          title: Límite de consumo (kWh)
+          description: Límite de consumo energético permitido para la zona.
+        description:
+          type: string
+          title: Descripción
+      required:
+      - consumption_limit_kwh
+      - name
+      - status
+      - zone_type
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    ErroresValidacion:
+      type: object
+      description: 'Lista de mensajes por campo, por ejemplo {"serial_number": ["Ya
+        existe un dispositivo con este número de serie."]}.'
+      additionalProperties:
+        type: array
+        items:
+          type: string
+  securitySchemes:
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
