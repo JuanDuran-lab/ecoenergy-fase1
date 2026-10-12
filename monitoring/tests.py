@@ -343,6 +343,21 @@ class SeedCommandTests(TestCase):
         self.assertNotIn("SEED_READER_PASSWORD", message)
 
 
+class DataSummaryCommandTests(EcoEnergyBaseTest):
+    def test_summary_shows_models_total_and_users_without_passwords(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        out = StringIO()
+        call_command("resumen_datos", stdout=out)
+        output = out.getvalue()
+        for text in ("Zonas (Zone)", "Lecturas (ConsumptionReading)", "TOTAL registros de negocio",
+                     "operador_norte", "EcoEnergy Norte"):
+            self.assertIn(text, output)
+        self.assertNotIn(TEST_PASSWORD, output)
+
+
 class ViewPermissionAndScopingTests(EcoEnergyBaseTest):
     def setUp(self):
         super().setUp()
