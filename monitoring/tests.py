@@ -258,9 +258,10 @@ class SeedCommandTests(TestCase):
         "SEED_ADMIN_PASSWORD": "Admin#Prueba2026",
         "SEED_SUPERVISOR_PASSWORD": "Super#Prueba2026",
         "SEED_READER_PASSWORD": "Lector#Prueba2026",
+        "SEED_GUEST_PASSWORD": "Invitado#Prueba2026",
     }
 
-    def test_seed_creates_more_than_1000_records_and_three_roles(self):
+    def test_seed_creates_more_than_2000_records_and_roles(self):
         from io import StringIO
         from unittest import mock
 
@@ -284,19 +285,31 @@ class SeedCommandTests(TestCase):
                 Alert,
             )
         )
-        self.assertGreaterEqual(total, 1000)
+        self.assertGreaterEqual(total, 2000)
         self.assertEqual(
             {
-                user.username: user.groups.get().name
+                user.username: {group.name for group in user.groups.all()}
                 for user in User.objects.filter(
-                    username__in=["admin_demo", "supervisor_norte", "lector_sur"]
+                    username__in=[
+                        "admin_demo",
+                        "supervisor_norte",
+                        "lector_sur",
+                        "invitado_centro",
+                    ]
                 )
             },
             {
-                "admin_demo": "Administrador",
-                "supervisor_norte": "Supervisor",
-                "lector_sur": "Lector",
+                "admin_demo": {"Administrador"},
+                "supervisor_norte": {"Supervisor", "Administrador API"},
+                "lector_sur": {"Lector", "Operador API"},
+                "invitado_centro": set(),
             },
+        )
+        self.assertFalse(
+            User.objects.filter(
+                username__in=["supervisor_norte", "lector_sur", "invitado_centro"],
+                is_superuser=True,
+            ).exists()
         )
         self.assertTrue(
             User.objects.get(username="lector_sur").check_password(self.ENV["SEED_READER_PASSWORD"])

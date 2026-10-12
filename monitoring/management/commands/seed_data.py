@@ -5,10 +5,16 @@ Uso:
     python manage.py seed_data            # carga inicial
     python manage.py seed_data --reset    # borra los datos de negocio y recarga
 
-Crea 3 organizaciones con más de 1.000 registros de negocio, los roles
-Administrador, Supervisor y Lector, y usuarios de prueba cuyas contraseñas
-se leen desde el .env. Usa una semilla fija, por lo que siempre genera los
+Crea 3 organizaciones con más de 2.000 registros de negocio, los roles web
+(Administrador, Supervisor y Lector), los roles de la API REST
+(Administrador API y Operador API) y usuarios de prueba cuyas contraseñas se
+leen desde el .env. Usa una semilla fija, por lo que siempre genera los
 mismos datos.
+
+Usuarios para demostrar la API (ninguno es superusuario):
+- supervisor_norte: Administrador API, lectura y escritura (EcoEnergy Norte).
+- lector_sur: Operador API, solo lectura (EcoEnergy Sur).
+- invitado_centro: autenticado pero sin rol API, la API le responde 403.
 """
 
 import os
@@ -24,6 +30,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import UserProfile
+from api.permissions import API_ADMIN_GROUP, API_OPERATOR_GROUP
 from monitoring.models import (
     Alert,
     AlertSeverity,
@@ -41,7 +48,7 @@ from monitoring.queries import annotate_zone_metrics
 RANDOM_SEED = 2026
 ZONES_PER_ORGANIZATION = 8
 DEVICES_PER_ZONE = 5
-READINGS_PER_DEVICE = 10
+READINGS_PER_DEVICE = 15
 READING_WINDOW_DAYS = 45
 
 ORGANIZATIONS = [
@@ -128,7 +135,7 @@ def money(value):
 
 
 class Command(BaseCommand):
-    help = "Carga datos reproducibles de demostración (más de 1.000 registros)."
+    help = "Carga datos reproducibles de demostración (más de 2.000 registros)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -172,7 +179,7 @@ class Command(BaseCommand):
                 "last_name": "Administradora",
                 "email": os.getenv("SEED_ADMIN_EMAIL", "admin@ecoenergy.demo"),
                 "password_var": "SEED_ADMIN_PASSWORD",
-                "group": "Administrador",
+                "groups": ["Administrador"],
                 "organization": None,
                 "is_staff": True,
                 "is_superuser": True,
@@ -183,7 +190,7 @@ class Command(BaseCommand):
                 "last_name": "Supervisor",
                 "email": os.getenv("SEED_SUPERVISOR_EMAIL", "supervisor@ecoenergy.demo"),
                 "password_var": "SEED_SUPERVISOR_PASSWORD",
-                "group": "Supervisor",
+                "groups": ["Supervisor", "Administrador API"],
                 "organization": "EcoEnergy Norte",
                 "is_staff": True,
                 "is_superuser": False,
@@ -194,8 +201,19 @@ class Command(BaseCommand):
                 "last_name": "Lectora",
                 "email": os.getenv("SEED_READER_EMAIL", "lector@ecoenergy.demo"),
                 "password_var": "SEED_READER_PASSWORD",
-                "group": "Lector",
+                "groups": ["Lector", "Operador API"],
                 "organization": "EcoEnergy Sur",
+                "is_staff": False,
+                "is_superuser": False,
+            },
+            {
+                "username": "invitado_centro",
+                "first_name": "Iván",
+                "last_name": "Invitado",
+                "email": os.getenv("SEED_GUEST_EMAIL", "invitado@ecoenergy.demo"),
+                "password_var": "SEED_GUEST_PASSWORD",
+                "groups": [],
+                "organization": "EcoEnergy Centro",
                 "is_staff": False,
                 "is_superuser": False,
             },
@@ -439,6 +457,13 @@ class Command(BaseCommand):
             group, _ = Group.objects.get_or_create(name=name)
             group.permissions.set(perms(codenames))
             groups[name] = group
+
+        # Roles de la API: la pertenencia al grupo define el acceso a /api/
+        # (ver api/permissions.py), por eso no llevan permisos de modelo.
+        for name in (API_ADMIN_GROUP, API_OPERATOR_GROUP):
+            group, _ = Group.objects.get_or_create(name=name)
+            group.permissions.clear()
+            groups[name] = group
         return groups
 
     def create_users(self, users_config, organizations, groups):
@@ -454,7 +479,7 @@ class Command(BaseCommand):
             user.set_password(item["password"])
             user.save()
             user.user_permissions.clear()
-            user.groups.set([groups[item["group"]]])
+            user.groups.set([groups[name] for name in item["groups"]])
 
             organization = organizations_by_name.get(item["organization"])
             UserProfile.objects.update_or_create(
@@ -481,6 +506,7 @@ class Command(BaseCommand):
         )
         self.stdout.write("")
         self.stdout.write("Usuarios de prueba (contraseñas definidas en .env):")
-        self.stdout.write("  admin_demo       -> Administrador, todas las organizaciones")
-        self.stdout.write("  supervisor_norte -> Supervisor, EcoEnergy Norte")
-        self.stdout.write("  lector_sur       -> Lector, EcoEnergy Sur")
+        self.stdout.write("  admin_demo       -> Administrador (superusuario), todas las organizaciones")
+        self.stdout.write("  supervisor_norte -> Supervisor + Administrador API, EcoEnergy Norte")
+        self.stdout.write("  lector_sur       -> Lector + Operador API, EcoEnergy Sur")
+        self.stdout.write("  invitado_centro  -> sin rol API, EcoEnergy Centro")
