@@ -26,3 +26,19 @@ class StandardPagination(PageNumberPagination):
                 "results": data,
             }
         )
+
+    def get_paginated_response_schema(self, schema):
+        # Documenta en OpenAPI la misma forma que get_paginated_response.
+        return {
+            "type": "object",
+            "required": ["count", "total_pages", "page", "page_size", "results"],
+            "properties": {
+                "count": {"type": "integer", "example": 600},
+                "total_pages": {"type": "integer", "example": 30},
+                "page": {"type": "integer", "example": 2},
+                "page_size": {"type": "integer", "example": 20},
+                "next": {"type": "string", "nullable": True, "format": "uri"},
+                "previous": {"type": "string", "nullable": True, "format": "uri"},
+                "results": schema,
+            },
+        }

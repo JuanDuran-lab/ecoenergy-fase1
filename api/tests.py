@@ -452,3 +452,27 @@ class JsonErrorTests(ApiBaseTest):
         self.assertEqual(response["Content-Type"], "application/json")
         self.assertNotIn("falla", response.json()["detail"])
 
+
+class OpenApiDocsTests(ApiBaseTest):
+    """Documentación OpenAPI pública y válida; los recursos siguen protegidos."""
+
+    def test_schema_and_docs_are_public(self):
+        response = self.client.get(f"{API}/schema/", {"format": "json"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        schema = response.json()
+        self.assertIn("/api/zonas/{id}/", schema["paths"])
+        responses = schema["paths"]["/api/zonas/{id}/"]["delete"]["responses"]
+        self.assertTrue({"204", "401", "403", "404"} <= set(responses))
+        self.assertIn("409", schema["paths"]["/api/fabricantes/{id}/"]["delete"]["responses"])
+        self.assertNotIn("post", schema["paths"]["/api/lecturas/"])
+
+        response = self.client.get(f"{API}/docs/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("swagger", response.content.decode().lower())
+
+    def test_schema_is_valid_without_warnings(self):
+        from io import StringIO
+
+        from django.core.management import call_command
+
+        call_command("spectacular", "--validate", "--fail-on-warn", stdout=StringIO())

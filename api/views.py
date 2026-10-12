@@ -16,8 +16,11 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status, viewsets
 from rest_framework.exceptions import APIException
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from core.scoping import scope_queryset
 from monitoring.models import (
@@ -29,6 +32,7 @@ from monitoring.models import (
     Zone,
 )
 
+from .schema import id_param, resource_docs, search_param
 from .serializers import (
     AlertSerializer,
     CategorySerializer,
@@ -57,7 +61,11 @@ def api_not_found(request, *args, **kwargs):
     escrita también recibe el 404 en JSON en vez del 403 HTML de Django.
     """
     return JsonResponse(
-        {"detail": "La ruta no existe en la API."}, status=status.HTTP_404_NOT_FOUND
+        {
+            "detail": "La ruta no existe en la API. "
+            "Revise las rutas disponibles en /api/docs/."
+        },
+        status=status.HTTP_404_NOT_FOUND,
     )
 
 
@@ -91,7 +99,10 @@ class SoftDeleteModelViewSet(ScopedQuerysetMixin, viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 
 
+@resource_docs("zona", "zonas", [search_param("nombre, descripción")])
 class ZoneViewSet(SoftDeleteModelViewSet):
+    """Zonas de la organización del usuario. Al crear, la organización se asigna sola."""
+
     serializer_class = ZoneSerializer
     search_fields = ("name", "description")
 
@@ -101,7 +112,14 @@ class ZoneViewSet(SoftDeleteModelViewSet):
         ).order_by("organization__name", "name", "id")
 
 
+@resource_docs(
+    "dispositivo",
+    "dispositivos",
+    [search_param("nombre, número de serie"), id_param("zone", "Solo dispositivos de esta zona.")],
+)
 class DeviceViewSet(SoftDeleteModelViewSet):
+    """Dispositivos de las zonas de la organización del usuario."""
+
     serializer_class = DeviceSerializer
     search_fields = ("name", "serial_number")
 
@@ -127,7 +145,10 @@ class CatalogViewSet(SoftDeleteModelViewSet):
         super().perform_destroy(instance)
 
 
+@resource_docs("fabricante", "fabricantes", [search_param("nombre")])
 class ManufacturerViewSet(CatalogViewSet):
+    """Fabricantes: catálogo compartido por todas las organizaciones."""
+
     serializer_class = ManufacturerSerializer
     in_use_message = (
         "No se puede eliminar el fabricante: está asociado a dispositivos. "
@@ -138,7 +159,10 @@ class ManufacturerViewSet(CatalogViewSet):
         return Manufacturer.objects.order_by("name", "id")
 
 
+@resource_docs("categoría", "categorías", [search_param("nombre")])
 class CategoryViewSet(CatalogViewSet):
+    """Categorías de dispositivo: catálogo compartido por todas las organizaciones."""
+
     serializer_class = CategorySerializer
     in_use_message = (
         "No se puede eliminar la categoría: está asociada a dispositivos. "
@@ -154,7 +178,18 @@ class CategoryViewSet(CatalogViewSet):
 # ---------------------------------------------------------------------------
 
 
+@resource_docs(
+    "lectura",
+    "lecturas",
+    [
+        search_param("dispositivo, número de serie, observaciones"),
+        id_param("device", "Solo lecturas de este dispositivo."),
+    ],
+    read_only=True,
+)
 class ConsumptionReadingViewSet(ScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
+    """Lecturas de consumo de la organización del usuario (solo lectura)."""
+
     serializer_class = ConsumptionReadingSerializer
     search_fields = ("device__name", "device__serial_number", "notes")
 
@@ -168,7 +203,23 @@ class ConsumptionReadingViewSet(ScopedQuerysetMixin, viewsets.ReadOnlyModelViewS
         return queryset
 
 
+@resource_docs(
+    "alerta",
+    "alertas",
+    [
+        search_param("título, descripción"),
+        OpenApiParameter(
+            "status",
+            OpenApiTypes.STR,
+            enum=Alert.Status.values,
+            description="Solo alertas en este estado.",
+        ),
+    ],
+    read_only=True,
+)
 class AlertViewSet(ScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
+    """Alertas de consumo de la organización del usuario (solo lectura)."""
+
     serializer_class = AlertSerializer
     search_fields = ("title", "description")
 
@@ -180,3 +231,27 @@ class AlertViewSet(ScopedQuerysetMixin, viewsets.ReadOnlyModelViewSet):
         if alert_status in Alert.Status.values:
             queryset = queryset.filter(status=alert_status)
         return queryset
+
+
+# ---------------------------------------------------------------------------
+# JWT (Simple JWT) con documentación en español
+# ---------------------------------------------------------------------------
+
+
+@extend_schema(
+    summary="Obtener token JWT",
+    description="Con usuario y contraseña entrega access (30 min) y refresh (1 día). "
+    "El access se envía en cada solicitud como Authorization: Bearer <access>.",
+    tags=["token"],
+)
+class TokenObtainView(TokenObtainPairView):
+    pass
+
+
+@extend_schema(
+    summary="Renovar access token",
+    description="Con un refresh vigente entrega un access nuevo.",
+    tags=["token"],
+)
+class TokenRefreshAccessView(TokenRefreshView):
+    pass

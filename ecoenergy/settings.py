@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "core",
     "accounts",
     "monitoring",
@@ -141,6 +143,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "DEFAULT_PAGINATION_CLASS": "api.pagination.StandardPagination",
     "EXCEPTION_HANDLER": "api.exceptions.api_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -148,6 +151,32 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS") or 1)),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "UPDATE_LAST_LOGIN": True,
+}
+
+# Documentación OpenAPI 3 (drf-spectacular): /api/schema/ y /api/docs/.
+# Swagger UI se sirve desde el propio proyecto (sidecar), sin depender de un
+# CDN. La documentación es pública; los recursos siguen protegidos con JWT.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EcoEnergy API REST",
+    "DESCRIPTION": (
+        "API de monitoreo energético. Autenticación JWT: POST /api/token/ y "
+        "header Authorization: Bearer <access>. Roles: Administrador API "
+        "(lectura y escritura), Operador API (solo lectura); sin rol API -> 403. "
+        "Scoping por organización: un registro de otra organización -> 404."
+    ),
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "SERVE_AUTHENTICATION": [],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "SWAGGER_UI_SETTINGS": {"persistAuthorization": False, "displayRequestDuration": True},
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "api.schema.add_error_responses",
+    ],
 }
 
 
