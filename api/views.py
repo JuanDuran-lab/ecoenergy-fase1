@@ -14,6 +14,8 @@ dispositivo borra también sus registros dependientes.
 
 from django.db import transaction
 from django.db.models import Q
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, viewsets
 from rest_framework.exceptions import APIException
 
@@ -45,6 +47,18 @@ class Conflict(APIException):
 def int_param(request, name):
     value = request.query_params.get(name, "").strip()
     return int(value) if value.isdigit() else None
+
+
+@csrf_exempt
+def api_not_found(request, *args, **kwargs):
+    """Ruta inexistente bajo /api/: 404 en JSON, también con DEBUG=True.
+
+    Exenta de CSRF porque la API no usa sesión: un POST a una ruta mal
+    escrita también recibe el 404 en JSON en vez del 403 HTML de Django.
+    """
+    return JsonResponse(
+        {"detail": "La ruta no existe en la API."}, status=status.HTTP_404_NOT_FOUND
+    )
 
 
 class ScopedQuerysetMixin:

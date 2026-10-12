@@ -390,3 +390,65 @@ class PaginationTests(ApiBaseTest):
         response = self.client.get(f"{API}/lecturas/", {"page_size": 10, "page": 3})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.json()["results"]), 5)
+
+
+class TrailingSlashTests(ApiBaseTest):
+    """Las rutas aceptan la URL con y sin barra final."""
+
+    def test_token_without_trailing_slash(self):
+        response = self.client.post(
+            f"{API}/token",
+            {"username": self.api_admin.username, "password": PASSWORD},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        refresh = response.json()["refresh"]
+        response = self.client.post(f"{API}/token/refresh", {"refresh": refresh}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_resources_without_trailing_slash(self):
+        self.authenticate(self.api_admin)
+        self.assertEqual(self.client.get(f"{API}/zonas").status_code, status.HTTP_200_OK)
+        detail = f"{API}/zonas/{self.zone_north.pk}"
+        self.assertEqual(self.client.get(detail).status_code, status.HTTP_200_OK)
+        response = self.client.patch(detail, {"description": "Sin barra"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response = self.client.post(f"{API}/categorias", {"name": "Sin barra"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_without_token_still_401_without_slash(self):
+        self.assertEqual(self.client.get(f"{API}/zonas").status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class JsonErrorTests(ApiBaseTest):
+    """Todos los errores bajo /api/ se responden en JSON."""
+
+    def test_unknown_route_returns_json_404(self):
+        for url in (f"{API}/zonass/", f"{API}/no/existe", f"{API}/zonas/{self.zone_north.pk}/extra/"):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+                self.assertEqual(response["Content-Type"], "application/json")
+                self.assertIn("detail", response.json())
+
+    def test_post_to_unknown_route_is_404_not_csrf_403(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        response = client.post(f"{API}/zonass", {}, content_type="application/json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn("detail", response.json())
+
+    def test_unhandled_error_returns_json_500(self):
+        from unittest import mock
+
+        from .views import ZoneViewSet
+
+        self.authenticate(self.api_admin)
+        with mock.patch.object(ZoneViewSet, "get_base_queryset", side_effect=RuntimeError("falla")):
+            with self.assertLogs("api", level="ERROR"):
+                response = self.client.get(f"{API}/zonas/")
+        self.assertEqual(response.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertNotIn("falla", response.json()["detail"])
+
