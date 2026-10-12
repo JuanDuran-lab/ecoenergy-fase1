@@ -22,6 +22,7 @@ import random
 from datetime import timedelta
 from decimal import ROUND_HALF_UP, Decimal
 
+from django.conf import settings
 from django.contrib.auth.models import Group, Permission, User
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -219,21 +220,37 @@ class Command(BaseCommand):
             },
         ]
 
+        # Revisa todas las contraseñas antes de cargar y avisa de una sola vez
+        # cuáles faltan o no cumplen la política, indicando el archivo a editar.
+        env_file = settings.ENV_FILE
+        missing, weak = [], []
         for item in config:
-            password = os.getenv(item["password_var"])
+            password = (os.getenv(item["password_var"]) or "").strip()
             if not password:
-                raise CommandError(
-                    f"Falta la variable {item['password_var']} en el archivo .env "
-                    "(ver .env.example)."
-                )
+                missing.append(item["password_var"])
+                continue
             try:
                 validate_password(password)
             except ValidationError as error:
-                raise CommandError(
-                    f"{item['password_var']} no cumple la política de contraseñas: "
-                    + " ".join(error.messages)
-                )
+                weak.append(f"{item['password_var']}: {' '.join(error.messages)}")
             item["password"] = password
+
+        if missing:
+            if not env_file.exists():
+                raise CommandError(
+                    f"No se encontró el archivo .env en {env_file.parent}. Créelo con "
+                    "'Copy-Item .env.example .env' (Windows) o 'cp .env.example .env' "
+                    "(Linux/macOS) y complete las contraseñas SEED_*."
+                )
+            raise CommandError(
+                f"Faltan valores en {env_file}: {', '.join(missing)}. Complételos en el "
+                "archivo .env (no en .env.example) y guarde los cambios."
+            )
+        if weak:
+            raise CommandError(
+                "Contraseñas que no cumplen la política (mínimo 10 caracteres, "
+                "mayúscula, minúscula, número y carácter especial): " + " | ".join(weak)
+            )
 
         return config
 

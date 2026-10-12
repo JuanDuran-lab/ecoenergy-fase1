@@ -13,7 +13,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+ENV_FILE = BASE_DIR / ".env"
+load_dotenv(ENV_FILE)
+
+DEV_SECRET_KEY = "django-insecure-clave-solo-desarrollo"
+EXAMPLE_SECRET_KEY = "coloca-aqui-una-clave-larga-y-aleatoria"
 
 
 def env_bool(name, default=False):
@@ -24,7 +28,7 @@ def env_list(name, default=""):
     return [item.strip() for item in os.getenv(name, default).split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "django-insecure-clave-solo-desarrollo")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY") or DEV_SECRET_KEY
 
 DEBUG = env_bool("DJANGO_DEBUG", False)
 
@@ -42,6 +46,8 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
+    "drf_spectacular",
+    "drf_spectacular_sidecar",
     "core",
     "accounts",
     "monitoring",
@@ -141,6 +147,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "DEFAULT_PAGINATION_CLASS": "api.pagination.StandardPagination",
     "EXCEPTION_HANDLER": "api.exceptions.api_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
 SIMPLE_JWT = {
@@ -148,6 +155,32 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS") or 1)),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "UPDATE_LAST_LOGIN": True,
+}
+
+# Documentación OpenAPI 3 (drf-spectacular): /api/schema/ y /api/docs/.
+# Swagger UI se sirve desde el propio proyecto (sidecar), sin depender de un
+# CDN. La documentación es pública; los recursos siguen protegidos con JWT.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "EcoEnergy API REST",
+    "DESCRIPTION": (
+        "API de monitoreo energético. Autenticación JWT: POST /api/token/ y "
+        "header Authorization: Bearer <access>. Roles: Administrador API "
+        "(lectura y escritura), Operador API (solo lectura); sin rol API -> 403. "
+        "Scoping por organización: un registro de otra organización -> 404."
+    ),
+    "VERSION": "1.0.0",
+    "SCHEMA_PATH_PREFIX": r"/api",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVE_PERMISSIONS": ["rest_framework.permissions.AllowAny"],
+    "SERVE_AUTHENTICATION": [],
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_DIST": "SIDECAR",
+    "SWAGGER_UI_FAVICON_HREF": "SIDECAR",
+    "SWAGGER_UI_SETTINGS": {"persistAuthorization": False, "displayRequestDuration": True},
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+        "api.schema.add_error_responses",
+    ],
 }
 
 
@@ -204,8 +237,21 @@ CSRF_COOKIE_SECURE = USE_HTTPS
 if USE_HTTPS:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-if not DEBUG and SECRET_KEY.startswith("django-insecure"):
-    raise RuntimeError("Define DJANGO_SECRET_KEY en el .env antes de ejecutar en producción.")
+# Sin .env (o con la clave de ejemplo) el proyecto no arranca con DEBUG=False:
+# el mensaje indica exactamente qué falta.
+if not DEBUG and SECRET_KEY in (DEV_SECRET_KEY, EXAMPLE_SECRET_KEY):
+    if not ENV_FILE.exists():
+        raise RuntimeError(
+            f"No se encontró el archivo .env en {BASE_DIR}. Créelo desde la "
+            "plantilla (Windows: Copy-Item .env.example .env | Linux/macOS: "
+            "cp .env.example .env) y complete DJANGO_SECRET_KEY y las "
+            "contraseñas SEED_*."
+        )
+    raise RuntimeError(
+        f"Falta DJANGO_SECRET_KEY en {ENV_FILE}. Complete una clave larga y "
+        "aleatoria (python -c \"import secrets; print(secrets.token_urlsafe(50))\") "
+        "o use DJANGO_DEBUG=True solo para desarrollo local."
+    )
 
 LOGGING = {
     "version": 1,

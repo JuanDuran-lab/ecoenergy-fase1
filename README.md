@@ -52,6 +52,7 @@ Proyecto de la asignatura **Programación Back End (INACAP)**:
 | Python 3.12 + Django 6.1 | Framework back end |
 | Django REST Framework 3.18 | API REST: serializers, ViewSets, rutas, paginación |
 | Simple JWT 5.5 | Autenticación de la API con tokens access/refresh |
+| drf-spectacular 0.30 | Documentación OpenAPI 3 y Swagger UI en `/api/docs/` |
 | SQLite (por defecto) / PostgreSQL | Base de datos, elegida por variable de entorno |
 | python-dotenv | Carga del archivo `.env` |
 | Pillow | Validación del contenido real de las imágenes |
@@ -71,8 +72,9 @@ api/                  API REST (Evaluación 3)
   views.py            ViewSets con scoping por organización y borrado lógico
   urls.py             Rutas /api/ (DefaultRouter) y endpoints JWT
   pagination.py       20 por página, ?page= y ?page_size= (máx. 100)
-  exceptions.py       404 en JSON sin revelar registros de otra organización
-  tests.py            25 pruebas de la API
+  exceptions.py       Errores en JSON (404 sin revelar otra organización, 500 genérico)
+  schema.py           Documentación OpenAPI: resúmenes, filtros y respuestas de error
+  tests.py            33 pruebas de la API
 core/                 Código transversal, reutilizado por las demás apps
   models.py           SoftDeleteModel: created_at, updated_at, deleted_at + managers
   scoping.py          Filtro de QuerySets por organización del usuario (web, Admin y API)
@@ -89,9 +91,10 @@ monitoring/           Negocio: zonas, dispositivos, lecturas y alertas
   forms.py            ModelForm con validaciones de servidor
   views/              Una vista por entidad (zones, devices, readings, alerts, dashboard)
   management/commands/seed_data.py   Carga de 2.186 registros, roles y usuarios
+  management/commands/resumen_datos.py   Cantidades por modelo y usuarios (demo)
 deploy/               Gunicorn (systemd), Nginx y script de actualización
 docs/                 Diagrama ER, guía de despliegue y colección Apidog
-  apidog/             Colección, entorno y matriz de pruebas de la API
+  apidog/             Colección, entorno, matriz de pruebas y esquema OpenAPI
 ```
 
 ## Instalación local
@@ -128,6 +131,7 @@ python manage.py runserver
 
 - Aplicación web: <http://127.0.0.1:8000/>
 - API REST: <http://127.0.0.1:8000/api/> (requiere token, ver más abajo)
+- Documentación de la API: <http://127.0.0.1:8000/api/docs/> (pública)
 
 > Si `.\.venv\Scripts\Activate.ps1` está bloqueado en Windows, ejecutar antes
 > `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`.
@@ -140,7 +144,8 @@ Comprobaciones opcionales después de instalar:
 ```bash
 python manage.py check
 python manage.py makemigrations --check --dry-run   # "No changes detected"
-python manage.py test                               # 108 pruebas
+python manage.py test                               # 118 pruebas
+python manage.py resumen_datos                      # modelos, total y usuarios
 ```
 
 ## Variables de entorno
@@ -233,13 +238,16 @@ o eliminar organizaciones no corresponde a su rol.
 | `/api/categorias/` y `/api/categorias/{id}/` | GET, POST, PUT, PATCH, DELETE | Ídem |
 | `/api/lecturas/` y `/api/lecturas/{id}/` | GET | Solo lista y detalle |
 | `/api/alertas/` y `/api/alertas/{id}/` | GET | Solo lista y detalle |
+| `/api/docs/` | GET | Documentación interactiva (Swagger UI), pública |
+| `/api/schema/` | GET | Esquema OpenAPI 3 (YAML; `?format=json` para JSON), público |
 
 Filtros opcionales en las listas: `?search=texto` (por nombre, serie, título,
 según el recurso), `/api/dispositivos/?zone=<id>`, `/api/lecturas/?device=<id>`
 y `/api/alertas/?status=open|in_progress|resolved`.
 
-Las rutas terminan en `/`. Un `POST` a `/api/token` (sin barra final) no se
-redirige.
+Todas las rutas aceptan la URL **con o sin barra final** (`/api/token/` y
+`/api/token`). Una ruta que no existe bajo `/api/` (por ejemplo
+`/api/zonass/`) responde **404 en JSON**, igual que cualquier otro error.
 
 ### Autenticación JWT
 
@@ -288,9 +296,14 @@ organización del usuario.
 | 400 | Datos inválidos (validaciones) o JSON mal formado |
 | 401 | Sin token, token inválido o vencido, credenciales incorrectas |
 | 403 | Usuario autenticado sin rol API, u Operador API que intenta escribir |
-| 404 | Id inexistente, registro de otra organización o página fuera de rango |
+| 404 | Id inexistente, registro de otra organización, página fuera de rango o ruta inexistente bajo `/api/` |
 | 405 | Método no permitido (por ejemplo, POST en lecturas o alertas) |
 | 409 | Eliminar un fabricante o categoría que tiene dispositivos |
+| 500 | Error inesperado del servidor: mensaje genérico en JSON; el detalle queda en el log |
+
+Todas las respuestas, incluidos los errores, son JSON con la forma
+`{"detail": "..."}` o, en los 400, `{"campo": ["mensaje"]}`. La lista completa de
+respuestas de cada endpoint está documentada en `/api/docs/`.
 
 ### Validaciones (400)
 
@@ -344,22 +357,44 @@ Archivos en [`docs/apidog/`](docs/apidog/):
 
 | Archivo | Contenido |
 |---|---|
-| `EcoEnergy_API.postman_collection.json` | Colección de 56 solicitudes en 7 carpetas, con verificaciones |
+| `EcoEnergy_API.postman_collection.json` | Colección de 58 solicitudes en 7 carpetas, con verificaciones |
 | `EcoEnergy_local.postman_environment.json` | Entorno `EcoEnergy local`: `baseUrl`, usuarios, contraseñas **vacías** y variables que llenan los scripts |
 | `MATRIZ_PRUEBAS.md` | Matriz de evidencias: URL, método, identidad, estado esperado y observado, respuesta representativa |
+| `openapi.yaml` | Esquema OpenAPI 3 de la API (el mismo de `/api/schema/`), opcional para importar como documentación |
 
 ### Importar y ejecutar
 
 1. Levantar el servidor local con los datos cargados (`seed_data`).
 2. En Apidog: **Settings → Import Data → Postman** e importar los dos
    archivos (colección y entorno).
-3. Seleccionar el entorno **EcoEnergy local** y completar
-   `admin_password`, `operator_password` y `guest_password` con las
-   contraseñas del `.env` (`SEED_SUPERVISOR_PASSWORD`,
-   `SEED_READER_PASSWORD` y `SEED_GUEST_PASSWORD`).
-4. Ejecutar las carpetas **en orden** (01 a 07), o la colección completa
-   con el Runner. La carpeta 01 obtiene los tokens y los guarda en variables
-   del entorno; las demás los usan como `Bearer`.
+3. Seleccionar el entorno **EcoEnergy local** y completar las contraseñas en
+   la columna de valor local. Cada variable corresponde al usuario del mismo
+   nombre:
+
+   | Variable del entorno | Usuario | Valor (del `.env`) |
+   |---|---|---|
+   | `supervisor_password` | `supervisor_norte` (Administrador API) | `SEED_SUPERVISOR_PASSWORD` |
+   | `lector_password` | `lector_sur` (Operador API) | `SEED_READER_PASSWORD` |
+   | `invitado_password` | `invitado_centro` (sin rol API) | `SEED_GUEST_PASSWORD` |
+
+   `SEED_ADMIN_PASSWORD` (de `admin_demo`, superusuario) no se usa en Apidog.
+4. Ejecutar las carpetas **en orden** (01 a 07). La carpeta 01 obtiene los
+   tokens y los guarda en variables del entorno; las demás los usan como
+   `Bearer`. El access dura 30 minutos: si aparecen 401 inesperados, volver
+   a ejecutar la carpeta 01.
+
+Para ejecutar todo de una vez: módulo **Pruebas → Escenarios de Prueba →
+Nuevo**, agregar paso **Importar desde Caso de Depuración de Endpoint**,
+marcar `EcoEnergy API REST (EVA 3)` (58), revisar que el orden siga las
+carpetas y **Ejecutar** con el entorno **EcoEnergy local**. El resultado
+queda en **Informes de Prueba**.
+
+> **Validación automática de Apidog.** Apidog compara cada respuesta con la
+> primera respuesta documentada del endpoint (normalmente 200), por lo que
+> marca como "fallidos" los pasos que esperan 401, 403, 404 o 409 aunque
+> todas las aserciones pasen. Para un informe en verde, desactivar
+> **Validate Response** en la configuración del proyecto de Apidog; las
+> verificaciones de la colección (`pm.test`) siguen comprobando cada estado.
 
 Cada solicitud indica en su descripción la identidad y el estado esperado, y
 trae scripts de verificación (`pm.test`) que comprueban el estado y el cuerpo
@@ -367,11 +402,11 @@ de la respuesta.
 
 | Carpeta | Comprueba |
 |---|---|
-| 01 JWT | Token de los 3 usuarios (200), renovar access (200), credenciales incorrectas (401) |
+| 01 JWT | Token de los 3 usuarios (200), renovar access (200), credenciales incorrectas (401), token sin barra final (200) |
 | 02 Autenticación y roles | Sin token y token inválido (401), operador GET (200) y POST (403), sin rol API (403) |
 | 03 Cobertura de modelos | GET lista y GET detalle de los 6 recursos (200) |
 | 04 CRUD principales | POST (201), GET (200), PATCH (200), PUT (200) y DELETE (204) de zona, dispositivo, fabricante y categoría; GET tras eliminar (404) |
-| 05 Validaciones y errores | 2 validaciones de campo, 1 de relación, 1 regla de negocio (400), id inexistente (404), catálogo en uso (409) |
+| 05 Validaciones y errores | 2 validaciones de campo, 1 de relación, 1 regla de negocio (400), ruta inexistente (404 JSON), id inexistente (404), catálogo en uso (409) |
 | 06 Paginación | Páginas 1 y 2 de lecturas con resultados distintos, `page_size` (200) |
 | 07 Scoping por organización | GET y PATCH de una zona de otra organización (404) |
 
@@ -383,6 +418,16 @@ eliminan al final de la carpeta 04.
 > Antes de exportar el entorno o tomar capturas, verificar que no queden
 > tokens ni contraseñas visibles: después de una ejecución, el entorno guarda
 > los tokens y las contraseñas en sus valores actuales.
+
+### Problemas frecuentes
+
+| Síntoma | Causa y solución |
+|---|---|
+| `RuntimeError: No se encontró el archivo .env` | Falta el `.env`: `Copy-Item .env.example .env` (Windows) o `cp .env.example .env` y completarlo |
+| `seed_data`: "Faltan valores en .../.env" | Las contraseñas `SEED_*` se escribieron en `.env.example` o no se guardó el `.env`. Editar el `.env` y guardar |
+| `git status` limpio después de editar el `.env` | Es lo esperado: el `.env` está en `.gitignore` y nunca se sube |
+| Apidog: 401 "No se encontró una cuenta de usuario activa" al pedir el token | La contraseña no corresponde al usuario: revisar la tabla del paso 3. Si sigue, `python manage.py seed_data --reset` recrea los usuarios con las contraseñas actuales del `.env` |
+| Apidog: 401 en solicitudes que antes daban 200 | El access venció (30 min): ejecutar de nuevo la carpeta 01 |
 
 ## Modelo de datos
 
@@ -570,10 +615,13 @@ La seguridad de la API se describe en [Roles de la API](#roles-de-la-api).
 | Roles API (401 / 403) | `api/permissions.py` |
 | Scoping en la API (404) | `get_queryset()` de `api/views.py` con `core/scoping.py` |
 | Paginación de la API | `api/pagination.py` |
+| Documentación OpenAPI y Swagger UI | `api/schema.py`, `SPECTACULAR_SETTINGS` en settings, rutas en `api/urls.py` |
+| Errores en JSON (404 de ruta, 500) | `api/exceptions.py`, `api_not_found` en `api/views.py` |
 | 6 maestras + 4 operacionales en inglés | `monitoring/models.py` |
 | Django Admin coherente | `monitoring/admin.py`, `accounts/admin.py`, `core/admin.py` (scoping, inline, acciones, filtro de eliminados, restaurar) |
 | Borrado lógico | `core/models.py` (`SoftDeleteModel`), cascada en `Zone.soft_delete()` y `Device.soft_delete()` |
 | 2.000+ registros reproducibles | `monitoring/management/commands/seed_data.py` |
+| Resumen de datos y usuarios | `monitoring/management/commands/resumen_datos.py` |
 | Login / logout | `accounts/views.py` (`LoginView`, `LogoutView` por POST) |
 | Recuperación con código de 6 dígitos | `accounts/models.py` (`PasswordResetCode`), `accounts/forms.py`, `accounts/views.py` |
 | Política de contraseñas | `AUTH_PASSWORD_VALIDATORS` en settings + `accounts/validators.py` |
@@ -613,18 +661,21 @@ exportó, cuándo, el alcance y los filtros.
 python manage.py test
 ```
 
-**108 pruebas**:
+**118 pruebas**:
 
-- **API (25, `api/tests.py`)**: obtener y renovar token, 401 sin token y con
+- **API (33, `api/tests.py`)**: obtener y renovar token, 401 sin token y con
   token inválido en los 6 recursos, 403 del operador al escribir y del usuario
   sin rol, CRUD completo con borrado lógico (201, 200, 200, 204, 404), zona
   creada en la organización del usuario, cascada al eliminar una zona,
   validaciones de campo y de relación (400), id inexistente y registro de otra
-  organización (404), catálogo en uso (409) y paginación.
-- **Web y Admin (83)**: validaciones de modelos y formularios, borrado lógico
-  y cascada, scoping en vistas y Admin, permisos (403/404), recuperación de
-  contraseña, política de contraseñas, imágenes, paginación en sesión, CSRF en
-  la eliminación, exportación a Excel y el comando `seed_data`.
+  organización (404), catálogo en uso (409), paginación, rutas sin barra final,
+  errores en JSON (404 de ruta inexistente y 500) y esquema OpenAPI válido.
+- **Web, Admin y comandos (85)**: validaciones de modelos y formularios,
+  borrado lógico y cascada, scoping en vistas y Admin, permisos (403/404),
+  recuperación de contraseña, política de contraseñas, imágenes, paginación en
+  sesión, CSRF en la eliminación, exportación a Excel y los comandos
+  `seed_data` (incluidos los mensajes de contraseñas faltantes) y
+  `resumen_datos`.
 
 ## Despliegue en AWS Academy
 
@@ -647,20 +698,22 @@ Si se actualiza el servidor con la versión de la API, agregar
    `pip install -r requirements.txt`, copiar `.env.example` a `.env` y
    completar las contraseñas, `migrate` y `seed_data` (muestra el total:
    2.186 registros).
-2. **Modelos y usuarios**: el resumen de `seed_data` muestra las cantidades;
-   en el Django Admin (`admin_demo`) se ven los 6 modelos poblados y los
-   4 usuarios con sus grupos.
-3. **Apidog**: importar la colección y el entorno, completar las contraseñas
+2. **Modelos y usuarios**: `python manage.py resumen_datos` muestra los
+   6 modelos con su cantidad, el total (2.186) y los usuarios con su rol API
+   y organización. También se ven en el Django Admin con `admin_demo`.
+3. **Documentación**: abrir <http://127.0.0.1:8000/api/docs/> para mostrar
+   los endpoints, métodos y respuestas documentadas.
+4. **Apidog**: importar la colección y el entorno, completar las contraseñas
    y ejecutar las carpetas 01 a 07 (ver [Pruebas con Apidog](#pruebas-con-apidog)).
-4. **JWT**: obtener token y renovarlo (200); sin token (401).
-5. **Roles**: `lector_sur` consulta (200) pero no crea (403);
+5. **JWT**: obtener token y renovarlo (200); sin token (401).
+6. **Roles**: `lector_sur` consulta (200) pero no crea (403);
    `invitado_centro` no consulta (403).
-6. **CRUD**: con `supervisor_norte`, crear, ver, modificar y eliminar
+7. **CRUD**: con `supervisor_norte`, crear, ver, modificar y eliminar
    (201, 200, 200, 204); el registro eliminado responde 404.
-7. **Errores**: número de serie inválido y zona de otra organización (400),
-   id inexistente (404).
-8. **Paginación**: `/api/lecturas/?page=1` y `?page=2` con resultados distintos.
-9. **Scoping**: con `supervisor_norte`, el id de una zona de EcoEnergy Sur
+8. **Errores**: número de serie inválido y zona de otra organización (400),
+   id inexistente y ruta mal escrita (404 en JSON).
+9. **Paginación**: `/api/lecturas/?page=1` y `?page=2` con resultados distintos.
+10. **Scoping**: con `supervisor_norte`, el id de una zona de EcoEnergy Sur
    responde 404.
 
 ### Aplicación web (Unidad II)
@@ -705,3 +758,4 @@ y se integró a `main` mediante Pull Request, sin commits directos sobre `main`:
 | `docs/readme` | Documentación de la Unidad II |
 | `feature/api-drf-jwt` | API REST con DRF y JWT, roles API, carga de 2.186 registros, pruebas |
 | `docs/readme-api-apidog` | Documentación de la API y colección Apidog |
+| `fix/api-pulido` | Rutas sin barra final, errores en JSON, OpenAPI, mensajes del `.env`, `resumen_datos` |
