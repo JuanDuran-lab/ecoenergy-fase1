@@ -7,6 +7,7 @@ variables de entorno cargadas del archivo .env. Ver .env.example.
 
 import os
 import sys
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -39,9 +40,12 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
+    "rest_framework_simplejwt",
     "core",
     "accounts",
     "monitoring",
+    "api",
 ]
 
 MIDDLEWARE = [
@@ -123,6 +127,28 @@ AUTH_PASSWORD_VALIDATORS = [
 LOGIN_URL = "accounts:login"
 LOGIN_REDIRECT_URL = "monitoring:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
+
+
+# API REST (/api/): solo JWT como autenticación, así una solicitud sin token
+# responde 401 y una denegada por rol responde 403. Respuestas solo en JSON y
+# listas paginadas (ver api/pagination.py).
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": ("api.permissions.ApiRolePermission",),
+    "DEFAULT_RENDERER_CLASSES": ("rest_framework.renderers.JSONRenderer",),
+    "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
+    "DEFAULT_PAGINATION_CLASS": "api.pagination.StandardPagination",
+    "EXCEPTION_HANDLER": "api.exceptions.api_exception_handler",
+}
+
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=int(os.getenv("JWT_ACCESS_MINUTES") or 30)),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.getenv("JWT_REFRESH_DAYS") or 1)),
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "UPDATE_LAST_LOGIN": True,
+}
 
 
 LANGUAGE_CODE = "es-cl"
